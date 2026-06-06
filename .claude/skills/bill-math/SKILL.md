@@ -43,7 +43,7 @@ Then per person, summed across all receipts:
 - **Single assignee on an item**: that person bears the item's full cost (no division).
 - **Receipt with no assigned items**: omitted from `receiptSummaries` and from everyone's groups.
 - **Split items**: `splitWith` in the breakdown lists co-assignees, scoped within the receipt the item came from.
-- **Percent label**: per-person cards show aggregate tax/tip in **dollars** (rates can differ per receipt); the per-receipt `· %` label only appears in the single-receipt bill summary.
+- **Percent label**: per-person cards show each receipt's subtotal/tax/tip in **dollars** (no `· %`, since rates differ per receipt), with the person's grand total in the card header. The `· %` label only appears in the top bill summary for a single-receipt bill.
 
 ## Worked Example (two receipts)
 
