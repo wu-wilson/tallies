@@ -1,0 +1,120 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  /* Background — three tiers */
+  --bg-primary: #111114;
+  --bg-secondary: #1a1a1e;
+  --bg-tertiary: #232328;
+
+  /* Borders — subtle separation */
+  --border-color: #2e2e34;
+  --border-subtle: #232328;
+
+  /* Text — strong hierarchy */
+  --text-primary: #ececee;
+  --text-secondary: #8b8b96;
+  --text-tertiary: #5c5c66;
+
+  /* Surface hover */
+  --surface-hover: #232328;
+
+  /* Brand — forest green */
+  --brand: #2D7D5A;
+  --brand-light: #3A9069;
+  --brand-subtle: rgba(45, 125, 90, 0.12);
+
+  /* Status */
+  --success: #4ADE80;
+  --warning: #FACC15;
+  --error: #F87171;
+
+  /* Person colors — muted, harmonized for dark bg */
+  --person-sage: #8FAA82;
+  --person-gold: #D4B175;
+  --person-plum: #B398C2;
+  --person-slate: #7E9EBA;
+  --person-rose: #D88FA6;
+  --person-taupe: #B8A595;
+  --person-teal: #74C0AE;
+  --person-clay: #D17A5E;
+}
+
+@layer base {
+  html {
+    overflow-x: hidden;
+    scroll-behavior: smooth;
+    -webkit-tap-highlight-color: transparent;
+    color-scheme: dark;
+  }
+
+  body {
+    @apply bg-bg-primary text-text-primary font-sans antialiased;
+    font-size: 14px;
+    line-height: 1.5;
+    overscroll-behavior: none;
+    font-feature-settings: 'cv11', 'ss01';
+  }
+
+  *:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(45, 125, 90, 0.45);
+  }
+
+  /* Number alignment everywhere */
+  .font-mono {
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Remove iOS input zoom */
+  input,
+  textarea,
+  select,
+  button {
+    font-size: inherit;
+  }
+
+  input[type='number']::-webkit-outer-spin-button,
+  input[type='number']::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+  input[type='number'] {
+    -moz-appearance: textfield;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}
+
+/* ── Landing entrance animations ── */
+@keyframes landing-from-left {
+  from { opacity: 0; transform: translateX(-12px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes landing-from-bottom {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-landing-from-left {
+  opacity: 0;
+  animation: landing-from-left 1000ms ease forwards;
+}
+
+.animate-landing-from-bottom {
+  opacity: 0;
+  animation: landing-from-bottom 1000ms ease forwards;
+}

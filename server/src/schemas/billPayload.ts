@@ -1,0 +1,34 @@
+import { z } from 'zod';
+
+// Mirrors `client/src/constants/colors.ts` — keep in sync.
+const PERSON_COLOR_KEYS = ['sage', 'gold', 'plum', 'slate', 'rose', 'taupe', 'teal', 'clay'] as const;
+
+const PersonSchema = z.object({
+  id: z.string().max(64),
+  name: z.string().max(100),
+  color: z.enum(PERSON_COLOR_KEYS),
+});
+
+const ItemSchema = z.object({
+  id: z.string().max(64),
+  name: z.string().max(200),
+  price: z.number(),
+  quantity: z.number().int().positive(),
+  assignees: z.array(z.string().max(64)).max(50),
+});
+
+/** Validated shape of a serialized bill stored under a share ID. Aggregates (subtotal/total) are derived
+ *  from items + tax/tip at render time — not persisted, to avoid drift. */
+export const BillPayloadSchema = z.object({
+  merchant: z.string().max(100).nullable().optional(),
+  date: z.string().max(50).nullable().optional(),
+  people: z.array(PersonSchema).max(50),
+  items: z.array(ItemSchema).max(200),
+  tax: z.number().nonnegative(),
+  taxIsPercent: z.boolean(),
+  tip: z.number().nonnegative(),
+  tipIsPercent: z.boolean(),
+});
+
+/** Inferred TypeScript type for a validated bill payload. */
+export type BillPayload = z.infer<typeof BillPayloadSchema>;

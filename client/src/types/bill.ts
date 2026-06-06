@@ -1,0 +1,22 @@
+import type { PersonColorKey } from '../constants/colors';
+
+/** Which flow screen is currently visible. */
+export type Screen = 'capture' | 'verify' | 'result';
+
+/** A person on the bill, with an auto-assigned color. */
+export interface Person {
+  id: string;
+  name: string;
+  /** One of the 8 person colors, auto-assigned by `nextColor` when added. */
+  color: PersonColorKey;
+}
+
+/** A single bill line item. */
+export interface BillItem {
+  id: string;
+  name: string;
+  price: number;
+  quantity: number;
+  /** Person IDs sharing this item; empty array means unassigned (excluded from breakdowns). */
+  assignees: string[];
+}
