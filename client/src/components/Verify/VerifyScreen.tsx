@@ -1,56 +1,41 @@
-import React, { useState } from 'react';
-import { AnimatePresence, motion } from 'framer-motion';
+import React, { useEffect } from 'react';
+import { motion } from 'framer-motion';
 
-import { AddItemButton } from './AddItemButton';
-import { ItemCard } from './ItemCard';
+import { Toast } from '../common/Toast';
 import { PeopleBar } from './PeopleBar';
 import { PrimaryCta } from './PrimaryCta';
-import { SplitEvenlyButton } from './SplitEvenlyButton';
+import { ReceiptCard } from './ReceiptCard';
 import { StickyAction } from './StickyAction';
 import { SummaryPanel } from './SummaryPanel';
-import { TaxTipRow } from './TaxTipRow';
 
+import { useToast } from '../../hooks/useToast';
 import { useBillStore } from '../../store/billStore';
 
 import { DURATION, EASE } from '../../constants/animations';
-import { MAX_NAME_LENGTH } from '../../constants/config';
+import { MAX_RECEIPTS } from '../../constants/config';
 
 /**
- * Edit-and-assign screen — header, people bar, item list, tax/tip, summary, and primary CTA (sticky on mobile, inline at the end of the column on `lg+`).
+ * Edit-and-assign screen — shared people bar, one card per receipt (each with its own items + tax/tip),
+ * an add-receipt control, a combined summary, and the primary CTA (sticky on mobile, inline on `lg+`).
  * @returns The full verify layout
  */
 export const VerifyScreen: React.FC = () => {
-  const {
-    merchant,
-    date,
-    items,
-    tax,
-    taxIsPercent,
-    tip,
-    tipIsPercent,
-    setMerchant,
-    setDate,
-    setTax,
-    setTaxIsPercent,
-    setTip,
-    setTipIsPercent,
-    setScreen,
-  } = useBillStore();
+  const receipts = useBillStore((s) => s.receipts);
+  const addReceipt = useBillStore((s) => s.addReceipt);
+  const setScreen = useBillStore((s) => s.setScreen);
+  const scanNotice = useBillStore((s) => s.scanNotice);
+  const setScanNotice = useBillStore((s) => s.setScanNotice);
+  const { toast, showToast, dismissToast } = useToast();
 
-  const [isEditingMerchant, setIsEditingMerchant] = useState(false);
-  const [isEditingDate, setIsEditingDate] = useState(false);
-  const [merchantValue, setMerchantValue] = useState(merchant);
-  const [dateValue, setDateValue] = useState(date);
+  const atReceiptCap = receipts.length >= MAX_RECEIPTS;
 
-  const handleMerchantBlur = () => {
-    setIsEditingMerchant(false);
-    setMerchant(merchantValue.trim());
-  };
-
-  const handleDateBlur = () => {
-    setIsEditingDate(false);
-    setDate(dateValue.trim());
-  };
+  // Surface a partial-scan notice once, then clear it so it doesn't replay on re-render or revisit.
+  useEffect(() => {
+    if (scanNotice) {
+      showToast(scanNotice, 'error');
+      setScanNotice(null);
+    }
+  }, [scanNotice, showToast, setScanNotice]);
 
   return (
     <motion.div
@@ -70,103 +55,36 @@ export const VerifyScreen: React.FC = () => {
         Back
       </button>
 
-      {/* Header */}
-      <div className="mb-10">
-        {isEditingMerchant ? (
-          <input
-            type="text"
-            value={merchantValue}
-            onChange={(e) => setMerchantValue(e.target.value)}
-            onBlur={handleMerchantBlur}
-            onKeyDown={(e) => e.key === 'Enter' && handleMerchantBlur()}
-            maxLength={MAX_NAME_LENGTH}
-            placeholder="Restaurant name"
-            className="-mx-2 w-[calc(100%+1rem)] rounded bg-transparent px-2 text-2xl font-semibold tracking-tight text-text-primary outline-none placeholder:text-text-tertiary"
-            autoFocus
-          />
-        ) : (
-          <button
-            onClick={() => {
-              setMerchantValue(merchant);
-              setIsEditingMerchant(true);
-            }}
-            className="-mx-2 rounded px-2 text-left text-2xl font-semibold tracking-tight text-text-primary transition-colors hover:text-brand"
-          >
-            {merchant || <span className="text-text-tertiary">Untitled bill</span>}
-          </button>
-        )}
-
-        <div className="mt-1 text-xs text-text-secondary">
-          {isEditingDate ? (
-            <input
-              type="date"
-              value={dateValue}
-              onChange={(e) => setDateValue(e.target.value)}
-              onBlur={handleDateBlur}
-              className="-mx-2 rounded bg-transparent px-2 text-text-secondary outline-none"
-              autoFocus
-            />
-          ) : (
-            <button
-              onClick={() => {
-                setDateValue(date);
-                setIsEditingDate(true);
-              }}
-              className="-mx-2 rounded px-2 transition-colors hover:text-text-primary"
-            >
-              {date || 'Add date'}
-            </button>
-          )}
-        </div>
-      </div>
+      <h1 className="mb-10 text-2xl font-semibold tracking-tight text-text-primary">Your bill</h1>
 
       {/* People */}
       <div className="mb-10">
         <PeopleBar />
       </div>
 
-      {/* Items */}
+      {/* Receipts */}
       <section className="mb-10">
-        <div className="mb-4 flex items-baseline justify-between gap-3">
-          <span className="text-[10px] font-medium uppercase tracking-[0.1em] text-text-tertiary">
-            Items
-          </span>
-          <SplitEvenlyButton />
-        </div>
-
-        <div className="flex flex-col gap-2.5">
-          <AnimatePresence initial={false}>
-            {items.map((item, index) => (
-              <ItemCard key={item.id} item={item} index={index} />
-            ))}
-          </AnimatePresence>
-          <AddItemButton />
-        </div>
-      </section>
-
-      {/* Adjustments */}
-      <section className="mb-10">
-        <p className="mb-3 text-[10px] font-medium uppercase tracking-[0.1em] text-text-tertiary">
-          Adjustments
+        <p className="mb-4 text-[10px] font-medium uppercase tracking-[0.1em] text-text-tertiary">
+          Receipts
         </p>
-        <div className="rounded-xl border border-border bg-bg-secondary px-4">
-          <div className="divide-y divide-border-subtle">
-            <TaxTipRow
-              label="Tax"
-              value={tax}
-              isPercent={taxIsPercent}
-              onValueChange={setTax}
-              onTogglePercent={setTaxIsPercent}
-            />
-            <TaxTipRow
-              label="Tip"
-              value={tip}
-              isPercent={tipIsPercent}
-              onValueChange={setTip}
-              onTogglePercent={setTipIsPercent}
-              quickButtons={[15, 18, 20, 22]}
-            />
-          </div>
+
+        <div className="flex flex-col gap-3">
+          {receipts.map((receipt) => (
+            <ReceiptCard key={receipt.id} receipt={receipt} canRemove={receipts.length > 1} />
+          ))}
+
+          <motion.button
+            onClick={addReceipt}
+            disabled={atReceiptCap}
+            className="flex h-10 w-full items-center justify-center gap-1.5 rounded-xl border border-dashed border-border px-4 text-[13px] font-medium text-text-secondary transition-colors hover:border-brand hover:text-brand disabled:cursor-not-allowed disabled:opacity-40"
+            whileTap={atReceiptCap ? undefined : { scale: 0.99 }}
+          >
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+              <line x1="12" y1="5" x2="12" y2="19" />
+              <line x1="5" y1="12" x2="19" y2="12" />
+            </svg>
+            Add receipt
+          </motion.button>
         </div>
       </section>
 
@@ -185,6 +103,14 @@ export const VerifyScreen: React.FC = () => {
 
       {/* Mobile-only sticky-bottom CTA */}
       <StickyAction />
+
+      <Toast
+        message={toast.message}
+        variant={toast.variant}
+        isVisible={toast.isVisible}
+        showId={toast.showId}
+        onDismiss={dismissToast}
+      />
     </motion.div>
   );
 };

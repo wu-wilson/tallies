@@ -11,6 +11,8 @@ import { Avatar } from '../common/Avatar';
 import type { BillItem } from '../../types/bill';
 
 interface ItemCardProps {
+  /** ID of the receipt this item belongs to — threaded into every store mutation. */
+  receiptId: string;
   item: BillItem;
   /** Position in the items list, used to stagger the entrance animation (30 ms per card). */
   index: number;
@@ -18,10 +20,10 @@ interface ItemCardProps {
 
 /**
  * Single bill-item row with editable name/price, per-person assignee toggles, and quick-assign actions.
- * @param props - Item plus its list index for stagger timing
+ * @param props - Receipt ID, the item, and its list index for stagger timing
  * @returns Card with editable fields and assignment controls
  */
-export const ItemCard: React.FC<ItemCardProps> = ({ item, index }) => {
+export const ItemCard: React.FC<ItemCardProps> = ({ receiptId, item, index }) => {
   const { people, removeItem, updateItem, toggleAssignment, assignAllToItem } = useBillStore();
   const [isEditingName, setIsEditingName] = useState(false);
   const [isEditingPrice, setIsEditingPrice] = useState(false);
@@ -36,13 +38,13 @@ export const ItemCard: React.FC<ItemCardProps> = ({ item, index }) => {
 
   const handleNameBlur = () => {
     setIsEditingName(false);
-    updateItem(item.id, { name: nameValue.trim() });
+    updateItem(receiptId, item.id, { name: nameValue.trim() });
   };
 
   const handlePriceBlur = () => {
     setIsEditingPrice(false);
     const parsed = parseFloat(priceValue);
-    updateItem(item.id, { price: isNaN(parsed) ? 0 : Math.max(0, parsed) });
+    updateItem(receiptId, item.id, { price: isNaN(parsed) ? 0 : Math.max(0, parsed) });
   };
 
   return (
@@ -52,7 +54,7 @@ export const ItemCard: React.FC<ItemCardProps> = ({ item, index }) => {
       exit={{ opacity: 0, x: -16 }}
       transition={{ duration: DURATION.normal, ease: EASE.out, delay: index * 0.03 }}
       className={clsx(
-        'rounded-xl border border-border bg-bg-secondary px-4',
+        'rounded-xl border border-border bg-bg-tertiary px-4',
         isUnassigned && 'opacity-90',
       )}
     >
@@ -116,7 +118,7 @@ export const ItemCard: React.FC<ItemCardProps> = ({ item, index }) => {
               color={person.color}
               size="xs"
               isDimmed={!item.assignees.includes(person.id)}
-              onClick={() => toggleAssignment(item.id, person.id)}
+              onClick={() => toggleAssignment(receiptId, item.id, person.id)}
             />
           ))}
         </div>
@@ -125,7 +127,7 @@ export const ItemCard: React.FC<ItemCardProps> = ({ item, index }) => {
           <div className="flex shrink-0 items-center gap-3 whitespace-nowrap text-[11px]">
             {showEveryone && (
               <button
-                onClick={() => assignAllToItem(item.id)}
+                onClick={() => assignAllToItem(receiptId, item.id)}
                 className="text-text-tertiary transition-colors hover:text-text-primary"
               >
                 Everyone
@@ -142,7 +144,7 @@ export const ItemCard: React.FC<ItemCardProps> = ({ item, index }) => {
         )}
 
         <motion.button
-          onClick={() => removeItem(item.id)}
+          onClick={() => removeItem(receiptId, item.id)}
           className={clsx(
             'flex h-5 w-5 shrink-0 items-center justify-center rounded text-text-tertiary transition-colors hover:text-status-error',
             hasQuickActions && '-ml-1.5',

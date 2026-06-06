@@ -16,21 +16,28 @@ import { deriveAssignedTotals, formatCurrency } from '../../lib/billMath';
 import { DURATION, EASE } from '../../constants/animations';
 
 /**
- * Per-person breakdown screen — summary, person cards, and a share CTA (sticky on mobile, inline on `lg+`).
+ * Per-person breakdown screen — adaptive hero, bill summary, per-person cards, and a share CTA
+ * (sticky on mobile, inline on `lg+`).
  * @returns The result screen with share controls and a transient toast
  */
 export const ResultScreen: React.FC = () => {
-  const store = useBillStore();
+  const receipts = useBillStore((s) => s.receipts);
+  const people = useBillStore((s) => s.people);
+  const setScreen = useBillStore((s) => s.setScreen);
   const { shareBill, isSharing } = useShare();
   const { toast, showToast, dismissToast } = useToast();
   const [hasShared, setHasShared] = useState(false);
 
-  const { items, subtotal, taxAmount, tipAmount, total, taxPercent, tipPercent, breakdowns } = useMemo(
-    () => deriveAssignedTotals(
-      store.items, store.people, store.tax, store.taxIsPercent, store.tip, store.tipIsPercent,
-    ),
-    [store.items, store.people, store.tax, store.taxIsPercent, store.tip, store.tipIsPercent],
+  const { subtotal, taxAmount, tipAmount, total, receiptSummaries, receiptCount, itemCount, breakdowns } = useMemo(
+    () => deriveAssignedTotals(receipts, people),
+    [receipts, people],
   );
+
+  // For a single contributing receipt, the hero mirrors today's look (merchant + date).
+  const singleReceipt = receiptCount === 1
+    ? receipts.find((r) => r.id === receiptSummaries[0].receiptId) ?? null
+    : null;
+  const title = singleReceipt ? (singleReceipt.merchant || 'Untitled bill') : 'Your bill';
 
   const handleShare = async () => {
     const url = await shareBill();
@@ -48,7 +55,7 @@ export const ResultScreen: React.FC = () => {
   return (
     <div className="mx-auto min-h-dvh max-w-2xl px-6 pt-[calc(32px+env(safe-area-inset-top))]">
       <button
-        onClick={() => store.setScreen('verify')}
+        onClick={() => setScreen('verify')}
         className="-ml-1 mb-6 flex items-center gap-1 text-xs text-text-secondary transition-colors hover:text-text-primary"
       >
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
@@ -64,13 +71,17 @@ export const ResultScreen: React.FC = () => {
         transition={{ duration: DURATION.smooth, ease: EASE.out }}
         className="mb-8"
       >
-        <h1 className="text-2xl font-semibold tracking-tight text-text-primary">
-          {store.merchant || 'Untitled bill'}
-        </h1>
+        <h1 className="text-2xl font-semibold tracking-tight text-text-primary">{title}</h1>
         <div className="mt-1 flex items-center gap-1.5 text-xs text-text-secondary">
-          {store.date && (
+          {singleReceipt?.date && (
             <>
-              <span>{store.date}</span>
+              <span>{singleReceipt.date}</span>
+              <span className="text-text-tertiary">·</span>
+            </>
+          )}
+          {receiptCount > 1 && (
+            <>
+              <span>{receiptCount} receipts</span>
               <span className="text-text-tertiary">·</span>
             </>
           )}
@@ -79,7 +90,7 @@ export const ResultScreen: React.FC = () => {
           </span>
           <span className="text-text-tertiary">·</span>
           <span>
-            {items.length} {items.length === 1 ? 'item' : 'items'}
+            {itemCount} {itemCount === 1 ? 'item' : 'items'}
           </span>
         </div>
 
@@ -97,13 +108,7 @@ export const ResultScreen: React.FC = () => {
         transition={{ duration: DURATION.smooth, ease: EASE.out, delay: 0.05 }}
         className="mb-10"
       >
-        <BillSummary
-          subtotal={subtotal}
-          tax={taxAmount}
-          tip={tipAmount}
-          taxLabel={`Tax · ${taxPercent}`}
-          tipLabel={`Tip · ${tipPercent}`}
-        />
+        <BillSummary summaries={receiptSummaries} subtotal={subtotal} tax={taxAmount} tip={tipAmount} />
       </motion.div>
 
       {/* Per-person */}
@@ -112,13 +117,7 @@ export const ResultScreen: React.FC = () => {
       </p>
       <div className="flex flex-col gap-2.5">
         {breakdowns.map((breakdown, index) => (
-          <PersonCard
-            key={breakdown.personId}
-            breakdown={breakdown}
-            index={index}
-            taxPercent={taxPercent}
-            tipPercent={tipPercent}
-          />
+          <PersonCard key={breakdown.personId} breakdown={breakdown} index={index} />
         ))}
       </div>
 

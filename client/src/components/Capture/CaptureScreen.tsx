@@ -20,46 +20,50 @@ function markLandingEntrancePlayed(): void {
 }
 
 /**
- * Landing screen — tally logo with Add receipt / Enter manually CTAs.
- * Renders `ImagePreview` instead once the user has picked a file (preview-and-scan sub-state).
+ * Landing screen — tally logo with Add receipts / Enter manually CTAs.
+ * Renders `ImagePreview` instead once the user has picked one or more files (preview-and-scan sub-state).
  * @returns Landing layout or the image-preview sub-screen
  */
 export const CaptureScreen: React.FC = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const receipts = useBillStore((s) => s.receipts);
+  const addReceipt = useBillStore((s) => s.addReceipt);
   const setScreen = useBillStore((s) => s.setScreen);
-  const [capturedFile, setCapturedFile] = useState<File | null>(null);
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [capturedFiles, setCapturedFiles] = useState<File[]>([]);
+  const [previewUrls, setPreviewUrls] = useState<string[]>([]);
   // Recomputed on every render so paints after the first one (Change, Back,
   // navigation back to landing) skip the animation classes entirely.
   const shouldAnimate = !hasPlayedEntrance;
 
   useEffect(() => {
-    if (!previewUrl) return;
-    return () => URL.revokeObjectURL(previewUrl);
-  }, [previewUrl]);
+    if (previewUrls.length === 0) return;
+    return () => previewUrls.forEach((url) => URL.revokeObjectURL(url));
+  }, [previewUrls]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+    const files = e.target.files ? Array.from(e.target.files) : [];
+    if (files.length === 0) return;
     markLandingEntrancePlayed();
-    setCapturedFile(file);
-    const url = URL.createObjectURL(file);
-    setPreviewUrl(url);
+    setCapturedFiles(files);
+    setPreviewUrls(files.map((file) => URL.createObjectURL(file)));
   };
 
   const handleReplace = () => {
-    setCapturedFile(null);
-    setPreviewUrl(null);
+    setCapturedFiles([]);
+    setPreviewUrls([]);
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
   const handleManualEntry = () => {
     markLandingEntrancePlayed();
+    // Ensure the bill has at least one (blank) receipt to edit, without piling up
+    // blanks if the user returns to the landing and re-enters.
+    if (receipts.length === 0) addReceipt();
     setScreen('verify');
   };
 
-  if (previewUrl && capturedFile) {
-    return <ImagePreview file={capturedFile} previewUrl={previewUrl} onReplace={handleReplace} />;
+  if (previewUrls.length > 0 && capturedFiles.length > 0) {
+    return <ImagePreview files={capturedFiles} previewUrls={previewUrls} onReplace={handleReplace} />;
   }
 
   const revealClass = (suffix: 'left' | 'bottom') =>
@@ -91,6 +95,7 @@ export const CaptureScreen: React.FC = () => {
           ref={fileInputRef}
           type="file"
           accept="image/*"
+          multiple
           onChange={handleFileChange}
           className="hidden"
         />
@@ -106,7 +111,7 @@ export const CaptureScreen: React.FC = () => {
             <line x1="8" y1="9" x2="16" y2="9" />
             <line x1="8" y1="13" x2="13" y2="13" />
           </svg>
-          Add receipt
+          Add receipts
         </motion.button>
 
         <div

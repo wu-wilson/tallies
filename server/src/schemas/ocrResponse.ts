@@ -3,7 +3,7 @@ import { z } from 'zod';
 const OcrItemSchema = z.object({
   name: z.string().max(200),
   price: z.number().nonnegative(),
-  quantity: z.number().int().positive().default(1),
+  quantity: z.number().positive().default(1),
 });
 
 /** Validated shape of the JSON returned by the OCR model. */

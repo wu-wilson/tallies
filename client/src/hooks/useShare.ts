@@ -17,14 +17,8 @@ export function useShare() {
 
     const state = useBillStore.getState();
     const payload = {
-      merchant: state.merchant || null,
-      date: state.date || null,
+      receipts: state.receipts,
       people: state.people,
-      items: state.items,
-      tax: state.tax,
-      taxIsPercent: state.taxIsPercent,
-      tip: state.tip,
-      tipIsPercent: state.tipIsPercent,
     };
 
     try {

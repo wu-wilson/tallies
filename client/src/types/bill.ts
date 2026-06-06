@@ -20,3 +20,17 @@ export interface BillItem {
   /** Person IDs sharing this item; empty array means unassigned (excluded from breakdowns). */
   assignees: string[];
 }
+
+/** One receipt within a bill — its own merchant, items, and tax/tip. People are shared across all receipts in a bill. */
+export interface Receipt {
+  id: string;
+  merchant: string;
+  date: string;
+  items: BillItem[];
+  tax: number;
+  /** When true, `tax` is a percent of this receipt's items subtotal; when false, a flat dollar amount. */
+  taxIsPercent: boolean;
+  tip: number;
+  /** When true, `tip` is a percent of this receipt's items subtotal; when false, a flat dollar amount. */
+  tipIsPercent: boolean;
+}

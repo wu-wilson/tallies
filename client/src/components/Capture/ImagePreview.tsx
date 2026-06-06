@@ -9,31 +9,40 @@ import { useToast } from '../../hooks/useToast';
 import { DURATION, EASE } from '../../constants/animations';
 
 interface ImagePreviewProps {
-  /** The picked image; passed to `useOcr().submitReceipt` when the user taps Scan. */
-  file: File;
-  /** Object URL for `file`, used as the `<img>` source. Caller owns its revoke lifecycle. */
-  previewUrl: string;
-  /** Invoked when the user taps Change — should clear the picked file in the parent and return to the picker. */
+  /** The picked images; passed to `useOcr().submitReceipts` when the user taps Scan. */
+  files: File[];
+  /** Object URLs for `files`, used as the `<img>` sources. Caller owns their revoke lifecycle. */
+  previewUrls: string[];
+  /** Invoked when the user taps Change — should clear the picked files in the parent and return to the picker. */
   onReplace: () => void;
 }
 
 /**
- * Receipt preview shown after the user picks an image, with Change / Scan buttons.
- * Drives the OCR roundtrip via `useOcr` and surfaces failures as a Toast on this screen.
+ * Receipt preview shown after the user picks one or more images, with Change / Scan buttons.
+ * Drives the batch OCR roundtrip via `useOcr` (with per-image progress) and surfaces failures as a Toast.
  * @param props - Image preview configuration
- * @returns Centered preview card with action buttons and a transient error toast
+ * @returns Centered preview (single large image or a thumbnail grid) with action buttons and an error toast
  */
-export const ImagePreview: React.FC<ImagePreviewProps> = ({ file, previewUrl, onReplace }) => {
-  const { submitReceipt, isLoading, error } = useOcr();
+export const ImagePreview: React.FC<ImagePreviewProps> = ({ files, previewUrls, onReplace }) => {
+  const { submitReceipts, isLoading, progress, error } = useOcr();
   const { toast, showToast, dismissToast } = useToast();
+  const isMulti = previewUrls.length > 1;
 
   useEffect(() => {
     if (error) showToast(error, 'error');
   }, [error, showToast]);
 
-  const handleUse = () => {
-    submitReceipt(file);
+  const handleScan = () => {
+    submitReceipts(files);
   };
+
+  const scanLabel = isLoading
+    ? progress && progress.total > 1
+      ? `Scanning ${Math.min(progress.done + 1, progress.total)} of ${progress.total}`
+      : 'Scanning'
+    : isMulti
+      ? `Scan ${files.length} receipts`
+      : 'Scan';
 
   return (
     <motion.div
@@ -42,14 +51,30 @@ export const ImagePreview: React.FC<ImagePreviewProps> = ({ file, previewUrl, on
       animate={{ opacity: 1 }}
       transition={{ duration: DURATION.normal, ease: EASE.out }}
     >
-      <div className="w-full max-w-sm overflow-hidden rounded-xl border border-border bg-bg-secondary">
-        <img
-          src={previewUrl}
-          alt="Receipt preview"
-          className="h-auto w-full object-contain"
-          style={{ maxHeight: '55vh' }}
-        />
-      </div>
+      {isMulti ? (
+        <div className="grid w-full max-w-sm grid-cols-3 gap-2">
+          {previewUrls.map((url, i) => (
+            <div key={url} className="overflow-hidden rounded-lg border border-border bg-bg-secondary">
+              <img src={url} alt={`Receipt ${i + 1}`} className="aspect-square h-full w-full object-cover" />
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="w-full max-w-sm overflow-hidden rounded-xl border border-border bg-bg-secondary">
+          <img
+            src={previewUrls[0]}
+            alt="Receipt preview"
+            className="h-auto w-full object-contain"
+            style={{ maxHeight: '55vh' }}
+          />
+        </div>
+      )}
+
+      {isMulti && (
+        <p className="text-xs text-text-tertiary">
+          {files.length} receipts
+        </p>
+      )}
 
       <div className="flex w-full max-w-sm gap-2">
         <motion.button
@@ -61,7 +86,7 @@ export const ImagePreview: React.FC<ImagePreviewProps> = ({ file, previewUrl, on
           Change
         </motion.button>
         <motion.button
-          onClick={handleUse}
+          onClick={handleScan}
           disabled={isLoading}
           className="flex h-10 flex-1 items-center justify-center rounded-lg bg-brand px-4 text-[13px] font-medium text-white transition-[filter,background-color] hover:bg-brand-light disabled:opacity-70"
           whileTap={{ scale: 0.98 }}
@@ -69,10 +94,10 @@ export const ImagePreview: React.FC<ImagePreviewProps> = ({ file, previewUrl, on
           {isLoading ? (
             <span className="flex items-center gap-2">
               <span className="h-3 w-3 animate-spin rounded-full border-2 border-white/30 border-t-white" />
-              Scanning
+              {scanLabel}
             </span>
           ) : (
-            'Scan'
+            scanLabel
           )}
         </motion.button>
       </div>

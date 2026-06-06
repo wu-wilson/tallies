@@ -11,10 +11,14 @@ Before releases, after major changes, or periodically during development.
 ## What to check
 
 ### Core Flows
-- Scan → verify → result flow works end-to-end
+- Scan → verify → result flow works end-to-end (single receipt)
+- Batch scan of multiple receipts → each becomes a receipt; per-receipt tax/tip honored
+- "Add receipt" (blank) on Verify works; removing a receipt works (last receipt not removable)
 - Manual entry → result flow works
-- "Split everything evenly" → result works
+- Per-receipt "Split evenly" assigns all people to that receipt's items (and toggles off)
+- Per-person totals sum each person's per-receipt proportional tax/tip correctly
 - Bill sharing roundtrips (POST then GET produces identical state)
+- Legacy flat share payloads render as a single-receipt bill
 - Expired bills return 404
 - Cron script connects, deletes expired rows, logs count, exits cleanly
 - OCR errors fall back to manual entry without blocking

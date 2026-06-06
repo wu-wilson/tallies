@@ -17,6 +17,12 @@ Source of truth: `server/src/routes/bills.ts`, `server/src/services/shortLinks.t
 5. Client constructs share URL: `${origin}/b/${id}`.
 6. Copies URL to clipboard, shows toast.
 
+## Payload Shape
+
+The stored payload is `{ receipts: Receipt[], people: Person[] }` (validated by `BillPayloadSchema`). Each receipt carries its own `merchant`, `date`, `items`, and `tax`/`tip`. Aggregates are derived at render time, not persisted.
+
+**Back-compat:** bills shared before multi-receipt used a flat shape (`{ merchant, date, items, tax, … }`). The server stores `data` as `JSONB` and returns it untouched, so the client normalizes on read — `useSharedBill`'s `normalizeBill()` wraps a legacy flat payload as a single-receipt bill. No SQL migration; old links keep rendering and age out via the 30-day TTL.
+
 ## Short ID Generation
 
 ```typescript

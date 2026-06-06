@@ -5,16 +5,24 @@ import clsx from 'clsx';
 import { DURATION, EASE } from '../../constants/animations';
 import { useBillStore } from '../../store/billStore';
 
+interface SplitEvenlyButtonProps {
+  /** Receipt this toggle applies to. */
+  receiptId: string;
+}
+
 /**
- * Toggle that assigns every item to every person — or clears all assignments when already in that state.
- * `isSplitEvenly` is derived from current state so the button stays in sync even after manual edits.
+ * Per-receipt toggle that assigns every person to every item in this receipt — or clears them when already
+ * in that state. `isSplitEvenly` is derived from current state so the button stays in sync after manual edits.
+ * @param props - The receipt the toggle controls
  * @returns Inline text button with crossfade between "Split evenly" and "Splitting evenly"
  */
-export const SplitEvenlyButton: React.FC = () => {
-  const { people, items, splitEvenly, unsplitEvenly } = useBillStore();
-  const isDisabled = people.length === 0 || items.length === 0;
+export const SplitEvenlyButton: React.FC<SplitEvenlyButtonProps> = ({ receiptId }) => {
+  const { people, receipts, splitReceiptEvenly, unsplitReceiptEvenly } = useBillStore();
+  const receipt = receipts.find((r) => r.id === receiptId);
+  const isDisabled = people.length === 0 || (receipt?.items.length ?? 0) === 0;
 
   const isSplitEvenly = useMemo(() => {
+    const items = receipts.find((r) => r.id === receiptId)?.items ?? [];
     if (people.length === 0 || items.length === 0) return false;
     const peopleIds = new Set(people.map((p) => p.id));
     return items.every(
@@ -22,11 +30,11 @@ export const SplitEvenlyButton: React.FC = () => {
         item.assignees.length === peopleIds.size &&
         item.assignees.every((id) => peopleIds.has(id)),
     );
-  }, [items, people]);
+  }, [receipts, receiptId, people]);
 
   const handleClick = () => {
-    if (isSplitEvenly) unsplitEvenly();
-    else splitEvenly();
+    if (isSplitEvenly) unsplitReceiptEvenly(receiptId);
+    else splitReceiptEvenly(receiptId);
   };
 
   return (

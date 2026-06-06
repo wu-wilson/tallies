@@ -1,6 +1,6 @@
 import React from 'react';
 
-import { formatCurrency, formatPercentage, resolveAmount } from '../../lib/billMath';
+import { deriveBillTotals, formatCurrency, formatPercentage } from '../../lib/billMath';
 import { useBillStore } from '../../store/billStore';
 
 interface SummaryRowProps {
@@ -16,27 +16,30 @@ const SummaryRow: React.FC<SummaryRowProps> = ({ label, value }) => (
 );
 
 /**
- * Bordered summary card showing the running subtotal, tax, tip, and total for the in-progress bill.
- * Reads the store directly; uses every item (not just assigned ones) so the user sees the full running total while editing.
+ * Bordered summary card showing the running subtotal, tax, tip, and total across all receipts.
+ * Uses every item (not just assigned ones) so the user sees the full running total while editing.
+ * Tax/tip rows carry a `· %` label only when there's a single receipt; with multiple receipts (mixed
+ * rates) they show combined dollar amounts only.
  * @returns Bordered card with three rows + a divided total
  */
 export const SummaryPanel: React.FC = () => {
-  const { items, tax, taxIsPercent, tip, tipIsPercent } = useBillStore();
+  const receipts = useBillStore((s) => s.receipts);
+  const { subtotal, taxAmount, tipAmount, total } = deriveBillTotals(receipts);
 
-  const subtotal = items.reduce((sum, i) => sum + i.price * i.quantity, 0);
-  const taxAmount = resolveAmount(tax, taxIsPercent, subtotal);
-  const tipAmount = resolveAmount(tip, tipIsPercent, subtotal);
-  const total = subtotal + taxAmount + tipAmount;
-
-  const taxPercent = formatPercentage(tax, taxIsPercent, subtotal, taxAmount);
-  const tipPercent = formatPercentage(tip, tipIsPercent, subtotal, tipAmount);
+  const single = receipts.length === 1 ? receipts[0] : null;
+  const taxLabel = single
+    ? `Tax · ${formatPercentage(single.tax, single.taxIsPercent, subtotal, taxAmount)}`
+    : 'Tax';
+  const tipLabel = single
+    ? `Tip · ${formatPercentage(single.tip, single.tipIsPercent, subtotal, tipAmount)}`
+    : 'Tip';
 
   return (
     <div className="overflow-hidden rounded-xl border border-border bg-bg-secondary">
       <div className="space-y-2 px-4 py-3">
         <SummaryRow label="Subtotal" value={formatCurrency(subtotal)} />
-        <SummaryRow label={`Tax · ${taxPercent}`} value={formatCurrency(taxAmount)} />
-        <SummaryRow label={`Tip · ${tipPercent}`} value={formatCurrency(tipAmount)} />
+        <SummaryRow label={taxLabel} value={formatCurrency(taxAmount)} />
+        <SummaryRow label={tipLabel} value={formatCurrency(tipAmount)} />
       </div>
       <div className="flex items-center justify-between border-t border-border-subtle bg-bg-tertiary/40 px-4 py-3">
         <span className="text-[10px] font-medium uppercase tracking-[0.1em] text-text-secondary">

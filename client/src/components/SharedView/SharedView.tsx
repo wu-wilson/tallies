@@ -22,9 +22,7 @@ export const SharedView: React.FC = () => {
   const { bill, isLoading, error } = useSharedBill(id || '');
 
   const derived = useMemo(
-    () => bill
-      ? deriveAssignedTotals(bill.items, bill.people, bill.tax, bill.taxIsPercent, bill.tip, bill.tipIsPercent)
-      : null,
+    () => (bill ? deriveAssignedTotals(bill.receipts, bill.people) : null),
     [bill],
   );
 
@@ -50,7 +48,11 @@ export const SharedView: React.FC = () => {
     );
   }
 
-  const { items, subtotal, taxAmount, tipAmount, total, taxPercent, tipPercent, breakdowns } = derived;
+  const { subtotal, taxAmount, tipAmount, total, receiptSummaries, receiptCount, itemCount, breakdowns } = derived;
+  const singleReceipt = receiptCount === 1
+    ? bill.receipts.find((r) => r.id === receiptSummaries[0].receiptId) ?? null
+    : null;
+  const title = singleReceipt ? (singleReceipt.merchant || 'Untitled bill') : 'Your bill';
   const expiresLabel = bill.expiresAt ? formatExpiresAt(bill.expiresAt) : null;
 
   return (
@@ -69,13 +71,17 @@ export const SharedView: React.FC = () => {
         transition={{ duration: DURATION.smooth, ease: EASE.out }}
         className="mb-8"
       >
-        <h1 className="text-2xl font-semibold tracking-tight text-text-primary">
-          {bill.merchant || 'Untitled bill'}
-        </h1>
+        <h1 className="text-2xl font-semibold tracking-tight text-text-primary">{title}</h1>
         <div className="mt-1 flex items-center gap-1.5 text-xs text-text-secondary">
-          {bill.date && (
+          {singleReceipt?.date && (
             <>
-              <span>{bill.date}</span>
+              <span>{singleReceipt.date}</span>
+              <span className="text-text-tertiary">·</span>
+            </>
+          )}
+          {receiptCount > 1 && (
+            <>
+              <span>{receiptCount} receipts</span>
               <span className="text-text-tertiary">·</span>
             </>
           )}
@@ -84,7 +90,7 @@ export const SharedView: React.FC = () => {
           </span>
           <span className="text-text-tertiary">·</span>
           <span>
-            {items.length} {items.length === 1 ? 'item' : 'items'}
+            {itemCount} {itemCount === 1 ? 'item' : 'items'}
           </span>
         </div>
 
@@ -101,13 +107,7 @@ export const SharedView: React.FC = () => {
         transition={{ duration: DURATION.smooth, ease: EASE.out, delay: 0.05 }}
         className="mb-10"
       >
-        <BillSummary
-          subtotal={subtotal}
-          tax={taxAmount}
-          tip={tipAmount}
-          taxLabel={`Tax · ${taxPercent}`}
-          tipLabel={`Tip · ${tipPercent}`}
-        />
+        <BillSummary summaries={receiptSummaries} subtotal={subtotal} tax={taxAmount} tip={tipAmount} />
       </motion.div>
 
       <p className="mb-3 text-[10px] font-medium uppercase tracking-[0.1em] text-text-tertiary">
@@ -115,13 +115,7 @@ export const SharedView: React.FC = () => {
       </p>
       <div className="flex flex-col gap-2.5">
         {breakdowns.map((breakdown, index) => (
-          <PersonCard
-            key={breakdown.personId}
-            breakdown={breakdown}
-            index={index}
-            taxPercent={taxPercent}
-            tipPercent={tipPercent}
-          />
+          <PersonCard key={breakdown.personId} breakdown={breakdown} index={index} />
         ))}
       </div>
 

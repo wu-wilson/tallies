@@ -1,6 +1,6 @@
 ---
 name: bill-math
-description: Proportional tax/tip formula, split-item division logic, rounding strategy, and edge cases.
+description: Per-receipt proportional tax/tip formula, split-item division logic, rounding strategy, and edge cases.
 user-invocable: true
 ---
 
@@ -8,20 +8,28 @@ user-invocable: true
 
 Source of truth: `client/src/lib/billMath.ts`.
 
+A bill is one or more **receipts**, each with its own items and tax/tip. People are shared across receipts. Tax and tip are resolved and distributed **per receipt**, then summed per person — this keeps each receipt's own rate accurate (you can't collapse differing rates into one global tax/tip).
+
 ## Algorithm
 
-For each person:
+For each receipt independently:
 1. `itemShare = (item.price × item.quantity) / item.assignees.length` for each assigned item
-2. `itemsSubtotal = sum of all itemShares`
-3. `globalSubtotal = sum of itemsSubtotal across all people` (equivalent to summing `price × quantity` over assigned items only)
-4. `taxShare = (itemsSubtotal / globalSubtotal) × resolvedTax`
-5. `tipShare = (itemsSubtotal / globalSubtotal) × resolvedTip`
-6. `total = itemsSubtotal + taxShare + tipShare`
+2. `personReceiptSubtotal = sum of that person's itemShares in this receipt`
+3. `receiptSubtotal = sum of personReceiptSubtotals` (assigned items only)
+4. `receiptTax = resolveAmount(receipt.tax, receipt.taxIsPercent, receiptSubtotal)` (same for tip)
+5. `personTaxShare = receiptTax × (personReceiptSubtotal / receiptSubtotal)` (same for tip)
+
+Then per person, summed across all receipts:
+- `itemsSubtotal = Σ personReceiptSubtotal`
+- `taxShare = Σ personTaxShare`, `tipShare = Σ personTipShare`
+- `total = itemsSubtotal + taxShare + tipShare`
+
+`computeBreakdowns(receipts, people)` returns each person's items grouped by receipt (`PersonReceiptGroup[]`) plus these aggregates. `deriveAssignedTotals(receipts, people)` adds combined totals and per-receipt summaries (`ReceiptSummary[]`); `deriveBillTotals(receipts)` gives the live combined totals over all items for the Verify screen.
 
 ## Resolution
 
 - `resolveAmount(value, isPercent, subtotal)`: if isPercent, returns `(value / 100) × subtotal`; otherwise returns value as-is.
-- Tax and tip can each be either a flat dollar amount or a percentage. The store tracks `taxIsPercent` and `tipIsPercent` booleans.
+- Tax and tip on each receipt can be a flat dollar amount or a percentage (`taxIsPercent` / `tipIsPercent` booleans per receipt).
 
 ## Rounding
 
@@ -30,22 +38,30 @@ For each person:
 
 ## Edge Cases
 
-- **Zero subtotal**: skip division (proportion = 0 for all, no tax/tip distributed).
-- **Unassigned items**: excluded from breakdown. They don't contribute to any person's subtotal.
+- **Zero receipt subtotal**: skip division (proportion = 0; no tax/tip distributed for that receipt).
+- **Unassigned items**: excluded from breakdown — they don't contribute to any subtotal.
 - **Single assignee on an item**: that person bears the item's full cost (no division).
-- **Empty assignees**: item is skipped in computation.
-- **Split items**: `splitWith` array in the breakdown shows other people sharing the same item.
+- **Receipt with no assigned items**: omitted from `receiptSummaries` and from everyone's groups.
+- **Split items**: `splitWith` in the breakdown lists co-assignees, scoped within the receipt the item came from.
+- **Percent label**: per-person cards show aggregate tax/tip in **dollars** (rates can differ per receipt); the per-receipt `· %` label only appears in the single-receipt bill summary.
 
-## Worked Example
+## Worked Example (two receipts)
 
-Bill: Chicken ($20), Wine ($8 split between Sarah and Mike), Salad ($12)
-Tax: $3.20 (flat), Tip: 20%
+Receipt A — Olive Garden, tax 10%, tip 20%:
+- Chicken $20 (Sarah), Wine $8 (Sarah + Mike split)
 
-Sarah assigned: Chicken ($20), Wine ($4 share)
-Mike assigned: Wine ($4 share), Salad ($12)
+Receipt B — Starbucks, tax 0%, tip 15%:
+- Latte $5 (Sarah), Muffin $4 (Mike)
 
-Sarah subtotal: $24.00, Mike subtotal: $16.00, Global: $40.00
-Sarah tax: (24/40) × 3.20 = $1.92, Mike tax: (16/40) × 3.20 = $1.28
-Tip resolved: 20% of $40 = $8.00
-Sarah tip: (24/40) × 8 = $4.80, Mike tip: (16/40) × 8 = $3.20
-Sarah total: $30.72, Mike total: $20.48
+Receipt A: subtotal $28 → tax $2.80, tip $5.60. Sarah sub $24, Mike sub $4.
+- Sarah: tax 2.80×24/28 = $2.40, tip 5.60×24/28 = $4.80
+- Mike: tax 2.80×4/28 = $0.40, tip 5.60×4/28 = $0.80
+
+Receipt B: subtotal $9 → tax $0, tip $1.35. Sarah sub $5, Mike sub $4.
+- Sarah: tip 1.35×5/9 = $0.75
+- Mike: tip 1.35×4/9 = $0.60
+
+Totals:
+- Sarah: items $29.00 + tax $2.40 + tip $5.55 = **$36.95**
+- Mike: items $8.00 + tax $0.40 + tip $1.40 = **$9.80**
+- Grand: $46.75 = subtotal $37.00 + tax $2.80 + tip $6.95 ✓

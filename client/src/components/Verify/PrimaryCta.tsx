@@ -2,7 +2,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import clsx from 'clsx';
 
-import { formatCurrency, resolveAmount } from '../../lib/billMath';
+import { deriveBillTotals, formatCurrency } from '../../lib/billMath';
 import { useBillStore } from '../../store/billStore';
 
 /**
@@ -11,18 +11,16 @@ import { useBillStore } from '../../store/billStore';
  * @returns Full-width brand button (or muted disabled button with hint)
  */
 export const PrimaryCta: React.FC = () => {
-  const { people, items, tax, taxIsPercent, tip, tipIsPercent, setScreen } = useBillStore();
+  const { people, receipts, setScreen } = useBillStore();
 
-  const unassignedCount = items.filter((i) => i.assignees.length === 0).length;
+  const allItems = receipts.flatMap((r) => r.items);
+  const unassignedCount = allItems.filter((i) => i.assignees.length === 0).length;
   const hasPeople = people.length >= 2;
-  const hasItems = items.length > 0;
+  const hasItems = allItems.length > 0;
   const allAssigned = unassignedCount === 0;
   const isReady = hasPeople && hasItems && allAssigned;
 
-  const subtotal = items.reduce((sum, i) => sum + i.price * i.quantity, 0);
-  const taxAmount = resolveAmount(tax, taxIsPercent, subtotal);
-  const tipAmount = resolveAmount(tip, tipIsPercent, subtotal);
-  const total = subtotal + taxAmount + tipAmount;
+  const { total } = deriveBillTotals(receipts);
 
   let hint = '';
   if (!hasItems) hint = 'Add items to continue';

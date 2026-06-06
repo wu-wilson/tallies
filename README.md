@@ -1,6 +1,6 @@
 ## ⚡ Overview
 
-[**Tallies**](https://tallies.dev) splits restaurant bills. Scan a receipt, verify the OCR results, assign items to people, and share a per-person breakdown via a short link. From "bill arrives" to "shareable URL" in under 90 seconds.
+[**Tallies**](https://tallies.dev) splits restaurant bills. Scan one or more receipts, verify the OCR results, assign items to people, and share a per-person breakdown via a short link. Multiple receipts (e.g. dinner + drinks elsewhere) combine into one breakdown, each with its own tax and tip. From "bill arrives" to "shareable URL" in under 90 seconds.
 
 ## 🔭 Architecture
 

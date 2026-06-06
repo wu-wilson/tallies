@@ -2,7 +2,7 @@
 
 ## What This Is
 
-Tallies is a mobile-first web app for splitting restaurant bills. Three screens: Capture (scan receipt), Verify & Assign (edit items, assign to people), Result (per-person breakdowns as a designed financial document). Bills can be shared via short URLs stored in Postgres. OCR powered by Claude Sonnet.
+Tallies is a mobile-first web app for splitting restaurant bills. Three screens: Capture (scan one or more receipts), Verify & Assign (edit items, assign to people), Result (per-person breakdowns as a designed financial document). A bill can combine multiple receipts (e.g. dinner + drinks elsewhere) into one breakdown. Bills can be shared via short URLs stored in Postgres. OCR powered by Claude Sonnet.
 
 ## Architecture
 
@@ -17,9 +17,10 @@ Tallies is a mobile-first web app for splitting restaurant bills. Three screens:
 - Forest green brand accent (`#2D7D5A`), used sparingly for primary CTAs and focus rings.
 - Fonts: Inter (UI/body/headers via weight + tracking), JetBrains Mono (numbers/currency).
 - 8 person colors (sage, gold, plum, slate, rose, taupe, teal, clay) — functional, never used as UI accents.
-- Proportional tax/tip math: each person's share proportional to their items subtotal. Full precision internally, round to cents only at display.
+- A bill is one or more receipts (each with its own merchant, items, and tax/tip) plus a shared set of people; people are referenced by ID in each item's `assignees`, so they span all receipts.
+- Proportional tax/tip math, computed **per receipt**: each person's share of a receipt's tax/tip is proportional to their subtotal within that receipt, then summed across receipts. Full precision internally, round to cents only at display.
 - In-flow microinteractions ≤300ms via Framer Motion (`DURATION.fast`/`normal`/`smooth` in `constants/animations.ts`); tap response scales to 0.97–0.98. The one-time landing entrance (logo draw + content reveal) is a deliberate exception — gated to play once per page load.
-- Single Zustand store drives the capture/verify/result flow. Screen state for that flow lives in the store, not separate routes; `SharedView` is the only other route (`/b/:id`).
+- Single Zustand store drives the capture/verify/result flow; it holds the bill as `receipts[]` plus a shared `people[]`. Screen state for that flow lives in the store, not separate routes; `SharedView` is the only other route (`/b/:id`).
 - OCR via Claude Sonnet (`claude-sonnet-4-6`) with image input and Zod-validated JSON output.
 - Sharing: 8-char base62 short IDs via `crypto.randomBytes(8)`. 30-day TTL enforced by weekly cron + on-read expiry check.
 - Graceful degradation: if Postgres isn't reachable, capture/verify/result still work — only sharing is disabled.
