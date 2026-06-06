@@ -24,7 +24,7 @@ Then per person, summed across all receipts:
 - `taxShare = Σ personTaxShare`, `tipShare = Σ personTipShare`
 - `total = itemsSubtotal + taxShare + tipShare`
 
-`computeBreakdowns(receipts, people)` returns each person's items grouped by receipt (`PersonReceiptGroup[]`) plus these aggregates. `deriveAssignedTotals(receipts, people)` adds combined totals and per-receipt summaries (`ReceiptSummary[]`); `deriveBillTotals(receipts)` gives the live combined totals over all items for the Verify screen.
+`computeBreakdowns(receipts, people)` returns each person's items grouped by receipt (`PersonReceiptGroup[]`, each carrying that receipt's own subtotal/tax/tip share for the person) plus the summed aggregates. `deriveAssignedTotals(receipts, people)` adds combined totals and per-receipt summaries (`ReceiptSummary[]`); `deriveBillTotals(receipts)` gives the live combined totals over all items for the Verify screen.
 
 ## Resolution
 

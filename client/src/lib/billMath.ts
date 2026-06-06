@@ -11,13 +11,17 @@ export interface ItemBreakdown {
   splitWith: string[];
 }
 
-/** One person's items within a single receipt, grouped for display. */
+/** One person's items and proportional totals within a single receipt, grouped for display. */
 export interface PersonReceiptGroup {
   receiptId: string;
   merchant: string;
   items: ItemBreakdown[];
   /** This person's items subtotal within this receipt (before tax/tip). */
   subtotal: number;
+  /** This person's proportional tax share for this receipt. */
+  taxShare: number;
+  /** This person's proportional tip share for this receipt. */
+  tipShare: number;
 }
 
 /** A single person's full bill breakdown — items grouped by receipt, plus aggregate subtotal, tax/tip, and total. */
@@ -103,10 +107,19 @@ export function computeBreakdowns(receipts: Receipt[], people: Person[]): Person
       const a = acc.get(person.id);
       if (!a) continue;
       const proportion = receiptSubtotal > 0 ? s.subtotal / receiptSubtotal : 0;
-      a.groups.push({ receiptId: receipt.id, merchant: receipt.merchant, items: s.items, subtotal: s.subtotal });
+      const personTax = taxAmount * proportion;
+      const personTip = tipAmount * proportion;
+      a.groups.push({
+        receiptId: receipt.id,
+        merchant: receipt.merchant,
+        items: s.items,
+        subtotal: s.subtotal,
+        taxShare: personTax,
+        tipShare: personTip,
+      });
       a.itemsSubtotal += s.subtotal;
-      a.taxShare += taxAmount * proportion;
-      a.tipShare += tipAmount * proportion;
+      a.taxShare += personTax;
+      a.tipShare += personTip;
     }
   }
 
