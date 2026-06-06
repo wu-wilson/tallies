@@ -17,7 +17,7 @@ app.set('trust proxy', 1);
 
 // Middleware
 app.use(createCorsMiddleware());
-app.use(express.json({ limit: '50kb' }));
+app.use(express.json({ limit: '100kb' }));
 
 // Health check
 app.get('/', (_req, res) => {

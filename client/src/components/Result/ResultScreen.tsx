@@ -40,15 +40,15 @@ export const ResultScreen: React.FC = () => {
   const title = singleReceipt ? (singleReceipt.merchant || 'Untitled bill') : 'Your bill';
 
   const handleShare = async () => {
-    const url = await shareBill();
-    if (url) {
+    const result = await shareBill();
+    if ('url' in result) {
       setHasShared(true);
       showToast('Link copied', 'success');
       // Revert "Link copied" back to "Share with group" so a second click reads as a fresh share
       // (each click creates a new short link by design).
       window.setTimeout(() => setHasShared(false), 3000);
     } else {
-      showToast('Failed to share', 'error');
+      showToast(result.error, 'error');
     }
   };
 

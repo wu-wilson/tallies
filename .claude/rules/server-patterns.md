@@ -17,7 +17,7 @@ paths:
 - `app.set('trust proxy', 1)` — Railway is one hop, so `req.ip` resolves to the real client (required for per-IP rate limiting). If the API is ever proxied through Cloudflare, key rate limits off `CF-Connecting-IP` instead.
 - No security-header middleware: this is a JSON API and never serves HTML, so document-oriented headers (CSP, frame options) add little. Set HSTS at the edge if the API is fronted by Cloudflare.
 - Fail-fast CORS check: refuse to boot if `NODE_ENV=production` and `ALLOWED_ORIGINS=*`.
-- `express.json({ limit: '50kb' })` — explicit body size limit.
+- `express.json({ limit: '100kb' })` — explicit body size limit (large multi-receipt bills can approach it; the `errorHandler` maps the resulting 413 to a user-safe "too large to share" message).
 - Rate limits via `express-rate-limit` (in-memory). One `writeLimiter` instance shared across POST `/api/ocr` and POST `/api/bills` (so `config.writeRateLimitPerHour`, default 30/hr/IP, is a combined bucket — not per-route). Reads use a separate `readLimiter` (`config.readRateLimitPerHour`, default 200/hr/IP).
 - Image content validation: magic-byte check via `file-type`, reject non-image uploads.
 - 5MB image size cap before OCR forwarding.
