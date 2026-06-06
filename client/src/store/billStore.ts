@@ -138,8 +138,10 @@ export const useBillStore = create<BillState & BillActions>()((set, get) => ({
   setScreen: (screen) => set({ screen }),
 
   loadOcrResults: (results) => {
+    // Enforce the receipt cap here too, so the store never holds more than a shareable bill allows
+    // regardless of how many images were scanned.
     set({
-      receipts: results.map(receiptFromOcr),
+      receipts: results.slice(0, MAX_RECEIPTS).map(receiptFromOcr),
       people: [],
       screen: 'verify',
     });

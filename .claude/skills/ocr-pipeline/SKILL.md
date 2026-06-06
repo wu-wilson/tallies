@@ -10,7 +10,7 @@ Source of truth: `client/src/lib/imageCompression.ts`, `server/src/routes/ocr.ts
 
 ## Client Side
 
-1. User supplies one or more images via `<input type="file" accept="image/*" multiple>` — mobile users get the native action sheet (camera, photo library, files); desktop users get the OS file picker. Each image becomes one receipt.
+1. User supplies one or more images via `<input type="file" accept="image/*" multiple>` — mobile users get the native action sheet (camera, photo library, files); desktop users get the OS file picker. Each image becomes one receipt. A selection is capped at `MAX_RECEIPTS` (20) — extras are dropped with a notice, and `loadOcrResults` slices defensively so the store never exceeds the cap that sharing (`BillPayloadSchema.receipts.max(20)`) enforces.
 2. Preview shows a single large image or a thumbnail grid, with "Change" / "Scan" buttons.
 3. On "Scan", each image is `compressImage`-d (max 1500px long edge, JPEG quality 0.85) and OCR'd **sequentially** — `useOcr.submitReceipts(files)` shows per-image progress ("Scanning 2 of 3…") and respects the write rate limit.
 4. Each compressed blob is sent as multipart FormData to `POST /api/ocr`.

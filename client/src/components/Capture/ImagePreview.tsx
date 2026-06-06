@@ -15,6 +15,8 @@ interface ImagePreviewProps {
   previewUrls: string[];
   /** Invoked when the user taps Change — should clear the picked files in the parent and return to the picker. */
   onReplace: () => void;
+  /** Optional informational line shown above the actions (e.g. when the selection was capped to the receipt limit). */
+  notice?: string;
 }
 
 /**
@@ -23,7 +25,7 @@ interface ImagePreviewProps {
  * @param props - Image preview configuration
  * @returns Centered preview (single large image or a thumbnail grid) with action buttons and an error toast
  */
-export const ImagePreview: React.FC<ImagePreviewProps> = ({ files, previewUrls, onReplace }) => {
+export const ImagePreview: React.FC<ImagePreviewProps> = ({ files, previewUrls, onReplace, notice }) => {
   const { submitReceipts, isLoading, progress, error } = useOcr();
   const { toast, showToast, dismissToast } = useToast();
   const isMulti = previewUrls.length > 1;
@@ -31,6 +33,10 @@ export const ImagePreview: React.FC<ImagePreviewProps> = ({ files, previewUrls, 
   useEffect(() => {
     if (error) showToast(error, 'error');
   }, [error, showToast]);
+
+  useEffect(() => {
+    if (notice) showToast(notice, 'warning');
+  }, [notice, showToast]);
 
   const handleScan = () => {
     submitReceipts(files);

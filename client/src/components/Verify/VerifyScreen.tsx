@@ -32,7 +32,7 @@ export const VerifyScreen: React.FC = () => {
   // Surface a partial-scan notice once, then clear it so it doesn't replay on re-render or revisit.
   useEffect(() => {
     if (scanNotice) {
-      showToast(scanNotice, 'error');
+      showToast(scanNotice, 'warning');
       setScanNotice(null);
     }
   }, [scanNotice, showToast, setScanNotice]);

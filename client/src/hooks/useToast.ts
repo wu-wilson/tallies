@@ -2,7 +2,7 @@ import { useCallback, useState } from 'react';
 
 interface ToastState {
   message: string;
-  variant: 'success' | 'error';
+  variant: 'success' | 'error' | 'warning';
   isVisible: boolean;
   /** Monotonic counter — incremented on every `showToast` so consecutive shows reset the auto-dismiss timer. */
   showId: number;
@@ -20,7 +20,7 @@ export function useToast() {
     showId: 0,
   });
 
-  const showToast = useCallback((message: string, variant: 'success' | 'error' = 'success') => {
+  const showToast = useCallback((message: string, variant: 'success' | 'error' | 'warning' = 'success') => {
     setToast((prev) => ({ message, variant, isVisible: true, showId: prev.showId + 1 }));
   }, []);
 

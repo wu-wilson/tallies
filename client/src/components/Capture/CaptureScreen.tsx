@@ -6,6 +6,8 @@ import { ImagePreview } from './ImagePreview';
 
 import { useBillStore } from '../../store/billStore';
 
+import { MAX_RECEIPTS } from '../../constants/config';
+
 /** When the content reveal begins (after logo finishes drawing), in ms. */
 const REVEAL_DELAY_MS = Math.round(TALLY_DRAW_DURATION * 1000) + 50;
 const revealStyle: React.CSSProperties = {
@@ -31,6 +33,7 @@ export const CaptureScreen: React.FC = () => {
   const setScreen = useBillStore((s) => s.setScreen);
   const [capturedFiles, setCapturedFiles] = useState<File[]>([]);
   const [previewUrls, setPreviewUrls] = useState<string[]>([]);
+  const [excludedCount, setExcludedCount] = useState(0);
   // Recomputed on every render so paints after the first one (Change, Back,
   // navigation back to landing) skip the animation classes entirely.
   const shouldAnimate = !hasPlayedEntrance;
@@ -41,16 +44,20 @@ export const CaptureScreen: React.FC = () => {
   }, [previewUrls]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files ? Array.from(e.target.files) : [];
-    if (files.length === 0) return;
+    const selected = e.target.files ? Array.from(e.target.files) : [];
+    if (selected.length === 0) return;
     markLandingEntrancePlayed();
+    // Cap the batch at MAX_RECEIPTS so we never OCR — or build — a bill larger than sharing allows.
+    const files = selected.slice(0, MAX_RECEIPTS);
     setCapturedFiles(files);
     setPreviewUrls(files.map((file) => URL.createObjectURL(file)));
+    setExcludedCount(selected.length - files.length);
   };
 
   const handleReplace = () => {
     setCapturedFiles([]);
     setPreviewUrls([]);
+    setExcludedCount(0);
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
@@ -63,7 +70,14 @@ export const CaptureScreen: React.FC = () => {
   };
 
   if (previewUrls.length > 0 && capturedFiles.length > 0) {
-    return <ImagePreview files={capturedFiles} previewUrls={previewUrls} onReplace={handleReplace} />;
+    return (
+      <ImagePreview
+        files={capturedFiles}
+        previewUrls={previewUrls}
+        onReplace={handleReplace}
+        notice={excludedCount > 0 ? `Max ${MAX_RECEIPTS} receipts per bill` : undefined}
+      />
+    );
   }
 
   const revealClass = (suffix: 'left' | 'bottom') =>
