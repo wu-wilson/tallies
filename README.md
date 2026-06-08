@@ -69,8 +69,6 @@ createdb tallies
 psql tallies -f schema.sql
 ```
 
-If you skip this step, the app still works — only sharing requires a database. The server logs a warning and share endpoints return 503.
-
 #### 3. Launch the app
 
 ```bash
@@ -89,7 +87,7 @@ Deployed on [Railway](https://railway.app) as three services: the client ships a
 
 ## ⚙️ Configuration
 
-All variables ship with working defaults — `./launch.sh` runs on a fresh clone with no env files. Override only to change a default.
+Every variable ships with a working default except `ANTHROPIC_API_KEY`, which is required for receipt scanning (OCR). `./launch.sh` runs on a fresh clone with no env files — override the rest only to change a default.
 
 - **Local dev** — create `client/.env` or `server/.env` (both gitignored).
 - **Production (Railway)** — variables are set in each service's **Variables** tab.
