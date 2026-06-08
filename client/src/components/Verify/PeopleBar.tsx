@@ -90,7 +90,7 @@ export const PeopleBar: React.FC = () => {
               onChange={(e) => setNewName(e.target.value)}
               onBlur={handleSubmit}
               onKeyDown={handleKeyDown}
-              placeholder="Name"
+              placeholder="e.g. Alex"
               maxLength={MAX_NAME_LENGTH}
               className="h-8 w-28 rounded-full bg-bg-secondary px-3 text-xs text-text-primary outline-none placeholder:text-text-tertiary"
               autoCapitalize="words"

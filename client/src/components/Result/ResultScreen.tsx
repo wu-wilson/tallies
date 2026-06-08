@@ -12,6 +12,7 @@ import { useToast } from '../../hooks/useToast';
 import { useBillStore } from '../../store/billStore';
 
 import { deriveAssignedTotals, formatCurrency } from '../../lib/billMath';
+import { deriveBillName } from '../../lib/billName';
 
 import { DURATION, EASE } from '../../constants/animations';
 
@@ -23,6 +24,7 @@ import { DURATION, EASE } from '../../constants/animations';
 export const ResultScreen: React.FC = () => {
   const receipts = useBillStore((s) => s.receipts);
   const people = useBillStore((s) => s.people);
+  const name = useBillStore((s) => s.name);
   const setScreen = useBillStore((s) => s.setScreen);
   const { shareBill, isSharing } = useShare();
   const { toast, showToast, dismissToast } = useToast();
@@ -33,11 +35,11 @@ export const ResultScreen: React.FC = () => {
     [receipts, people],
   );
 
-  // For a single contributing receipt, the hero mirrors today's look (merchant + date).
+  // A single contributing receipt still shows its date in the subline.
   const singleReceipt = receiptCount === 1
     ? receipts.find((r) => r.id === receiptSummaries[0].receiptId) ?? null
     : null;
-  const title = singleReceipt ? (singleReceipt.merchant || 'Untitled bill') : 'Your bill';
+  const title = deriveBillName(name);
 
   const handleShare = async () => {
     const result = await shareBill();

@@ -9,6 +9,7 @@ import { PersonCard } from '../Result/PersonCard';
 import { useSharedBill } from '../../hooks/useSharedBill';
 
 import { deriveAssignedTotals, formatCurrency } from '../../lib/billMath';
+import { deriveBillName } from '../../lib/billName';
 
 import { DURATION, EASE } from '../../constants/animations';
 
@@ -52,7 +53,7 @@ export const SharedView: React.FC = () => {
   const singleReceipt = receiptCount === 1
     ? bill.receipts.find((r) => r.id === receiptSummaries[0].receiptId) ?? null
     : null;
-  const title = singleReceipt ? (singleReceipt.merchant || 'Untitled bill') : 'Your bill';
+  const title = deriveBillName(bill.name);
   const expiresLabel = bill.expiresAt ? formatExpiresAt(bill.expiresAt) : null;
 
   return (

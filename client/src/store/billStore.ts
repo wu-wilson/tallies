@@ -16,6 +16,8 @@ interface OcrResult {
 
 interface BillState {
   screen: Screen;
+  /** Optional bill title. Empty by default — unnamed bills show "Untitled bill" on Verify and fall back to "Your bill" on the breakdown (see `deriveBillName`). */
+  name: string;
   receipts: Receipt[];
   people: Person[];
   /** Transient one-shot notice (e.g. "1 of 2 receipts couldn't be scanned") surfaced once on Verify, then cleared. */
@@ -26,6 +28,7 @@ interface BillActions {
   setScreen: (screen: Screen) => void;
   loadOcrResults: (results: OcrResult[]) => void;
   setScanNotice: (notice: string | null) => void;
+  setName: (name: string) => void;
 
   addReceipt: () => void;
   removeReceipt: (id: string) => void;
@@ -52,6 +55,7 @@ interface BillActions {
 
 const initialState: BillState = {
   screen: 'capture',
+  name: '',
   receipts: [],
   people: [],
   scanNotice: null,
@@ -141,6 +145,7 @@ export const useBillStore = create<BillState & BillActions>()((set, get) => ({
     // Enforce the receipt cap here too, so the store never holds more than a shareable bill allows
     // regardless of how many images were scanned.
     set({
+      name: '',
       receipts: results.slice(0, MAX_RECEIPTS).map(receiptFromOcr),
       people: [],
       screen: 'verify',
@@ -148,6 +153,8 @@ export const useBillStore = create<BillState & BillActions>()((set, get) => ({
   },
 
   setScanNotice: (scanNotice) => set({ scanNotice }),
+
+  setName: (name) => set({ name }),
 
   addReceipt: () => {
     const { receipts } = get();

@@ -36,4 +36,4 @@ paths:
 ## Structural Caps
 
 - Max 20 receipts per bill, 200 items per receipt, 50 people per bill.
-- Max 100 chars per person/merchant name, 200 chars per item name.
+- Max 100 chars per bill/person/merchant name, 200 chars per item name.

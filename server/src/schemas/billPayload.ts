@@ -32,6 +32,7 @@ const ReceiptSchema = z.object({
  *  own items + tax/tip) plus a shared set of people. Aggregates (subtotals/total) are derived from items + tax/tip
  *  at render time — not persisted, to avoid drift. */
 export const BillPayloadSchema = z.object({
+  name: z.string().max(100).nullable().optional(),
   receipts: z.array(ReceiptSchema).max(20),
   people: z.array(PersonSchema).max(50),
 });

@@ -23,7 +23,7 @@ export function useShare() {
     setIsSharing(true);
 
     const state = useBillStore.getState();
-    const payload = { receipts: state.receipts, people: state.people };
+    const payload = { name: state.name || null, receipts: state.receipts, people: state.people };
     const urlPromise = createBill(payload);
 
     // Clipboard path: pre-arm synchronously (preserves iOS activation). Only when we won't use the
@@ -69,7 +69,7 @@ export function useShare() {
 }
 
 /** POST the bill and return its share URL; rejects with a user-safe message on failure. */
-async function createBill(payload: { receipts: Receipt[]; people: Person[] }): Promise<string> {
+async function createBill(payload: { name: string | null; receipts: Receipt[]; people: Person[] }): Promise<string> {
   const response = await fetch(`${API_URL}/api/bills`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },

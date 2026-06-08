@@ -6,6 +6,8 @@ import type { BillItem, Person, Receipt } from '../types/bill';
 
 /** Normalized shared bill — always in the receipts shape, regardless of payload version. */
 export interface SharedBill {
+  /** Optional bill title; absent on bills shared before the field existed (falls back to "Your bill"). */
+  name?: string;
   receipts: Receipt[];
   people: Person[];
   /** ISO timestamp at which the share link expires. Absent on bills shared before the field was added. */
@@ -14,6 +16,7 @@ export interface SharedBill {
 
 /** Raw payload as returned by `/api/bills/:id` — either the current receipts shape or the legacy flat shape. */
 interface RawBill {
+  name?: string | null;
   receipts?: Receipt[];
   people?: Person[];
   merchant?: string | null;
@@ -29,7 +32,7 @@ interface RawBill {
 /** Wrap a legacy flat payload (no `receipts`) as a single-receipt bill so old share links keep rendering. */
 function normalizeBill(data: RawBill): SharedBill {
   if (Array.isArray(data.receipts)) {
-    return { receipts: data.receipts, people: data.people ?? [], expiresAt: data.expiresAt };
+    return { name: data.name ?? undefined, receipts: data.receipts, people: data.people ?? [], expiresAt: data.expiresAt };
   }
   return {
     receipts: [

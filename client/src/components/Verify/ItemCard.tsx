@@ -69,7 +69,8 @@ export const ItemCard: React.FC<ItemCardProps> = ({ receiptId, item, index }) =>
               onBlur={handleNameBlur}
               onKeyDown={(e) => e.key === 'Enter' && handleNameBlur()}
               maxLength={MAX_ITEM_NAME_LENGTH}
-              className="-ml-2 w-[calc(100%+0.5rem)] rounded bg-transparent px-2 text-sm text-text-primary outline-none"
+              placeholder="e.g. Bananas"
+              className="-ml-2 w-[calc(100%+0.5rem)] rounded bg-transparent px-2 text-sm text-text-primary outline-none placeholder:text-text-tertiary"
               autoFocus
             />
           ) : (

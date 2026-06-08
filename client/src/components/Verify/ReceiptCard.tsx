@@ -62,7 +62,7 @@ export const ReceiptCard: React.FC<ReceiptCardProps> = ({ receipt, canRemove }) 
               onBlur={handleMerchantBlur}
               onKeyDown={(e) => e.key === 'Enter' && handleMerchantBlur()}
               maxLength={MAX_NAME_LENGTH}
-              placeholder="Restaurant name"
+              placeholder="e.g. Costco"
               className="-ml-1 w-[calc(100%+0.5rem)] rounded bg-transparent px-1 text-base font-semibold tracking-tight text-text-primary outline-none placeholder:text-text-tertiary"
               autoFocus
             />

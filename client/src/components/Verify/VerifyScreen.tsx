@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 
 import { Toast } from '../common/Toast';
@@ -12,7 +12,7 @@ import { useToast } from '../../hooks/useToast';
 import { useBillStore } from '../../store/billStore';
 
 import { DURATION, EASE } from '../../constants/animations';
-import { MAX_RECEIPTS } from '../../constants/config';
+import { MAX_NAME_LENGTH, MAX_RECEIPTS } from '../../constants/config';
 
 /**
  * Edit-and-assign screen — shared people bar, one card per receipt (each with its own items + tax/tip),
@@ -25,9 +25,19 @@ export const VerifyScreen: React.FC = () => {
   const setScreen = useBillStore((s) => s.setScreen);
   const scanNotice = useBillStore((s) => s.scanNotice);
   const setScanNotice = useBillStore((s) => s.setScanNotice);
+  const name = useBillStore((s) => s.name);
+  const setName = useBillStore((s) => s.setName);
   const { toast, showToast, dismissToast } = useToast();
 
+  const [isEditingName, setIsEditingName] = useState(false);
+  const [nameValue, setNameValue] = useState(name);
+
   const atReceiptCap = receipts.length >= MAX_RECEIPTS;
+
+  const handleNameBlur = () => {
+    setIsEditingName(false);
+    setName(nameValue.trim());
+  };
 
   // Surface a partial-scan notice once, then clear it so it doesn't replay on re-render or revisit.
   useEffect(() => {
@@ -55,7 +65,32 @@ export const VerifyScreen: React.FC = () => {
         Back
       </button>
 
-      <h1 className="mb-10 text-2xl font-semibold tracking-tight text-text-primary">Your bill</h1>
+      {/* Bill title (editable; shows "Untitled bill" until named — the breakdown then defaults to "Your bill") */}
+      <div className="mb-10">
+        {isEditingName ? (
+          <input
+            type="text"
+            value={nameValue}
+            onChange={(e) => setNameValue(e.target.value)}
+            onBlur={handleNameBlur}
+            onKeyDown={(e) => e.key === 'Enter' && handleNameBlur()}
+            maxLength={MAX_NAME_LENGTH}
+            placeholder="e.g. Weekend trip"
+            className="-mx-2 w-[calc(100%+1rem)] rounded bg-transparent px-2 text-2xl font-semibold tracking-tight text-text-primary outline-none placeholder:text-text-tertiary"
+            autoFocus
+          />
+        ) : (
+          <button
+            onClick={() => {
+              setNameValue(name);
+              setIsEditingName(true);
+            }}
+            className={`-mx-2 rounded px-2 text-left text-2xl font-semibold tracking-tight transition-colors hover:text-brand ${name ? 'text-text-primary' : 'text-text-tertiary'}`}
+          >
+            {name || 'Untitled bill'}
+          </button>
+        )}
+      </div>
 
       {/* People */}
       <div className="mb-10">

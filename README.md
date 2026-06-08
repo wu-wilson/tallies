@@ -1,6 +1,6 @@
 ## ⚡ Overview
 
-[**Tallies**](https://tallies.dev) splits restaurant bills — scan one or more receipts, assign items to people, and share a per-person breakdown via a short link. Multiple receipts combine into one breakdown, each with its own tax and tip.
+[**Tallies**](https://tallies.dev) splits bills — scan one or more receipts, assign items to people, and share a per-person breakdown via a short link. Multiple receipts combine into one breakdown, each with its own tax and tip.
 
 ## 🔭 Architecture
 
