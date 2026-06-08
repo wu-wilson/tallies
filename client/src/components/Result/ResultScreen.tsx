@@ -41,14 +41,19 @@ export const ResultScreen: React.FC = () => {
 
   const handleShare = async () => {
     const result = await shareBill();
-    if ('url' in result) {
+    if ('error' in result) {
+      showToast(result.error, 'error');
+      return;
+    }
+    if (result.copied) {
       setHasShared(true);
       showToast('Link copied', 'success');
       // Revert "Link copied" back to "Share with group" so a second click reads as a fresh share
       // (each click creates a new short link by design).
       window.setTimeout(() => setHasShared(false), 3000);
     } else {
-      showToast(result.error, 'error');
+      // Bill was created, but the clipboard write was blocked — don't claim it copied.
+      showToast("Couldn't copy the link — try again", 'warning');
     }
   };
 
