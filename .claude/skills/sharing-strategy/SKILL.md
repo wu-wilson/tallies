@@ -15,7 +15,9 @@ Source of truth: `server/src/routes/bills.ts`, `server/src/services/shortLinks.t
 3. Server generates 8-char base62 short ID, inserts into `bills` table.
 4. Returns `{ id }` to client.
 5. Client constructs share URL: `${origin}/b/${id}`.
-6. Copies URL to clipboard, shows toast.
+6. Opens the native share sheet (`navigator.share`) when available, otherwise copies the URL to the clipboard (toast on the copy path).
+
+**Share vs. clipboard:** both consume the user-activation, so the path is chosen up front. The clipboard fallback uses a pending-promise `ClipboardItem` so the copy survives the round-trip on iOS Safari (a plain post-`await` write is blocked there).
 
 ## Payload Shape
 

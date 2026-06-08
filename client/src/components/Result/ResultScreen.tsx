@@ -45,6 +45,10 @@ export const ResultScreen: React.FC = () => {
       showToast(result.error, 'error');
       return;
     }
+    if (result.shared) {
+      // Native share sheet handled it (or the user dismissed it) — no toast needed.
+      return;
+    }
     if (result.copied) {
       setHasShared(true);
       showToast('Link copied', 'success');
@@ -52,8 +56,8 @@ export const ResultScreen: React.FC = () => {
       // (each click creates a new short link by design).
       window.setTimeout(() => setHasShared(false), 3000);
     } else {
-      // Bill was created, but the clipboard write was blocked — don't claim it copied.
-      showToast("Couldn't copy the link — try again", 'warning');
+      // Bill was created, but neither share nor copy landed — don't claim success.
+      showToast("Couldn't share the link — try again", 'warning');
     }
   };
 
