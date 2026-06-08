@@ -83,7 +83,7 @@ The cron service is not started by `launch.sh` — it's a scheduled job that onl
 
 ## ☁️ Deployment
 
-Deployed on [Railway](https://railway.app) as three services: the client ships as a static build (`tallies.dev`), the server runs as a separate API (`api.tallies.dev`), and the cron runs weekly to delete expired bills. DNS via Cloudflare.
+Deployed on [Railway](https://railway.app) as three services: the client ships as a static build (`tallies.dev`), the server runs as a separate API (`api.tallies.dev`), and the cron runs weekly to delete expired bills. DNS via [Cloudflare](https://www.cloudflare.com).
 
 ## ⚙️ Configuration
 
