@@ -82,7 +82,7 @@ export const ResultScreen: React.FC = () => {
         transition={{ duration: DURATION.smooth, ease: EASE.out }}
         className="mb-8"
       >
-        <h1 className="text-2xl font-semibold tracking-tight text-text-primary">{title}</h1>
+        <h1 className="break-words text-2xl font-semibold tracking-tight text-text-primary">{title}</h1>
         <div className="mt-1 flex items-center gap-1.5 text-xs text-text-secondary">
           {singleReceipt?.date && (
             <>

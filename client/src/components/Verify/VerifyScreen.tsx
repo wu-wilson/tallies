@@ -85,7 +85,7 @@ export const VerifyScreen: React.FC = () => {
               setNameValue(name);
               setIsEditingName(true);
             }}
-            className={`-mx-2 rounded px-2 text-left text-2xl font-semibold tracking-tight transition-colors hover:text-brand ${name ? 'text-text-primary' : 'text-text-tertiary'}`}
+            className={`-mx-2 block w-[calc(100%+1rem)] break-words rounded px-2 text-left text-2xl font-semibold tracking-tight transition-colors hover:text-brand ${name ? 'text-text-primary' : 'text-text-tertiary'}`}
           >
             {name || 'Untitled bill'}
           </button>
