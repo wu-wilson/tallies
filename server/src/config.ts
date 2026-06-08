@@ -10,5 +10,4 @@ export const config = {
   readRateLimitPerHour: parseInt(process.env.READ_RATE_LIMIT_PER_HOUR || '200', 10),
   maxImageSizeBytes: parseInt(process.env.MAX_IMAGE_SIZE_BYTES || '5242880', 10),
   allowedOrigins: process.env.ALLOWED_ORIGINS || '*',
-  nodeEnv: process.env.NODE_ENV || 'development',
 } as const;

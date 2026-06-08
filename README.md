@@ -1,6 +1,6 @@
 ## ⚡ Overview
 
-[**Tallies**](https://tallies.dev) splits restaurant bills. Scan one or more receipts, verify the OCR results, assign items to people, and share a per-person breakdown via a short link. Multiple receipts (e.g. dinner + drinks elsewhere) combine into one breakdown, each with its own tax and tip. From "bill arrives" to "shareable URL" in under 90 seconds.
+[**Tallies**](https://tallies.dev) splits restaurant bills — scan one or more receipts, assign items to people, and share a per-person breakdown via a short link. Multiple receipts combine into one breakdown, each with its own tax and tip.
 
 ## 🔭 Architecture
 
@@ -111,7 +111,6 @@ All variables ship with working defaults — `./launch.sh` runs on a fresh clone
 | `READ_RATE_LIMIT_PER_HOUR`  | `200`                                 | Read requests/hr/IP for GET `/api/bills/:id`.                                                   |
 | `MAX_IMAGE_SIZE_BYTES`      | `5242880`                             | Max receipt image size (5 MB).                                                                  |
 | `ALLOWED_ORIGINS`           | `*`                                   | Comma-separated CORS allowlist. Set to `https://tallies.dev` in production.                     |
-| `NODE_ENV`                  | `development`                         | Set to `production` to enforce strict CORS and hide error stack traces.                         |
 
 #### Cron (`cron/`)
 

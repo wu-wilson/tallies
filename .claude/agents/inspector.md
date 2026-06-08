@@ -42,7 +42,6 @@ Before releases, after major changes, or periodically during development.
 - Body size limits on JSON parser
 - Parameterized SQL queries (no string concatenation)
 - Image content validation (magic-byte check)
-- Fail-fast CORS check in production
 - Rate limits on all endpoints
 
 ## Output format
