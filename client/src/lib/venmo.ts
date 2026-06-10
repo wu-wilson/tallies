@@ -24,6 +24,16 @@ export function isValidVenmoUsername(username: string): boolean {
   return VALID_PATTERN.test(username);
 }
 
+/** Broad platform buckets; iPad/desktop-Safari report as `desktop` here by design. */
+type Platform = 'ios' | 'android' | 'desktop';
+
+function detectPlatform(): Platform {
+  const ua = navigator.userAgent;
+  if (/iPad|iPhone|iPod/.test(ua)) return 'ios';
+  if (/Android/.test(ua)) return 'android';
+  return 'desktop';
+}
+
 interface VenmoPaymentParams {
   /** Recipient's sanitized Venmo username (no leading `@`). */
   username: string;
@@ -33,20 +43,40 @@ interface VenmoPaymentParams {
   memo: string;
 }
 
+/** A pay-anchor target: the URL plus whether it should open in a new tab. */
+interface VenmoLink {
+  href: string;
+  /** True for the desktop web page (new tab); false for the mobile app hand-offs (same tab). */
+  openInNewTab: boolean;
+}
+
 /**
- * Build the prefilled Venmo payment URL — a universal/app link that opens the Venmo app when installed
- * and the web payment page otherwise. Most reliable when navigated via a tapped `<a>`, not JS.
+ * Build the platform-specific pay link for a tapped `<a>`: the `venmo://` app scheme on iOS, an
+ * `intent://` link on Android (opens the app, else falls back to the `account.venmo.com` web page),
+ * and the `account.venmo.com` web page on desktop.
  * @param params - Recipient handle, amount, and memo
- * @returns An `https://account.venmo.com/...` URL with encoded `txn`/`amount`/`note` params
+ * @returns The `href` and whether to open it in a new tab
  */
-export function buildVenmoPaymentUrl({ username, amount, memo }: VenmoPaymentParams): string {
+export function buildVenmoLink({ username, amount, memo }: VenmoPaymentParams): VenmoLink {
   const recipient = encodeURIComponent(username);
   const amountParam = encodeURIComponent(amount.toFixed(2));
   const note = encodeURIComponent(memo);
-  return `https://account.venmo.com/u/${recipient}?txn=pay&amount=${amountParam}&note=${note}`;
-}
+  const query = `recipients=${recipient}&txn=pay&amount=${amountParam}&note=${note}`;
+  const webUrl = `https://account.venmo.com/u/${recipient}?txn=pay&amount=${amountParam}&note=${note}`;
 
-/** Whether the user agent looks like a mobile browser; iPad/desktop-Safari report as desktop here by design. */
-export function isMobileDevice(): boolean {
-  return /iPad|iPhone|iPod|Android/.test(navigator.userAgent);
+  switch (detectPlatform()) {
+    case 'ios':
+      // Opens the app when installed; iOS shows an "address invalid" alert if it isn't (no clean fallback).
+      return { href: `venmo://paycharge?${query}`, openInNewTab: false };
+    case 'android': {
+      // Chrome opens the app, or natively navigates to browser_fallback_url (the web page) when it isn't installed.
+      const fallback = encodeURIComponent(webUrl);
+      return {
+        href: `intent://paycharge?${query}#Intent;scheme=venmo;package=com.venmo;S.browser_fallback_url=${fallback};end`,
+        openInNewTab: false,
+      };
+    }
+    default:
+      return { href: webUrl, openInNewTab: true };
+  }
 }

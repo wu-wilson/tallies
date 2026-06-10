@@ -1,7 +1,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 
-import { buildVenmoPaymentUrl, isMobileDevice } from '../../lib/venmo';
+import { buildVenmoLink } from '../../lib/venmo';
 
 interface VenmoButtonProps {
   /** Recipient's sanitized Venmo username (no leading `@`). */
@@ -14,16 +14,17 @@ interface VenmoButtonProps {
 
 /**
  * Per-person pay link showing the white Venmo wordmark on the brand blue. A tapped anchor to the
- * Venmo universal/app link opens the Venmo app when installed (web otherwise); lightens on hover.
+ * platform-specific Venmo link (deep link on mobile, web on desktop); lightens on hover.
  * @param props - Recipient handle, amount, and memo for the payment
  * @returns Full-width Venmo link styled as a button
  */
 export const VenmoButton: React.FC<VenmoButtonProps> = ({ username, amount, memo }) => {
+  const { href, openInNewTab } = buildVenmoLink({ username, amount, memo });
+
   return (
     <motion.a
-      href={buildVenmoPaymentUrl({ username, amount, memo })}
-      // Same-tab on mobile so the OS routes the universal link to the app; new tab on desktop keeps the bill open.
-      target={isMobileDevice() ? undefined : '_blank'}
+      href={href}
+      target={openInNewTab ? '_blank' : undefined}
       rel="noopener noreferrer"
       aria-label="Pay via Venmo"
       className="flex h-10 w-full items-center justify-center rounded-lg bg-venmo px-4 text-white transition-[filter,background-color] hover:bg-venmo-light"
