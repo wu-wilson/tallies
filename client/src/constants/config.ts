@@ -16,6 +16,9 @@ export const MAX_NAME_LENGTH = 100;
 /** Max length of an item name. */
 export const MAX_ITEM_NAME_LENGTH = 200;
 
+/** Max length of a Venmo username (matches server-side regex bound). */
+export const VENMO_USERNAME_MAX_LENGTH = 30;
+
 /** Longest edge of the compressed receipt image, in pixels. */
 export const IMAGE_MAX_DIMENSION = 1500;
 

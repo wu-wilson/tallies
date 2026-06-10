@@ -6,13 +6,16 @@ import { BillSummary } from './BillSummary';
 import { PersonCard } from './PersonCard';
 import { ShareCta } from './ShareCta';
 import { StickyShare } from './StickyShare';
+import { VenmoField } from './VenmoField';
 
 import { useShare } from '../../hooks/useShare';
 import { useToast } from '../../hooks/useToast';
+import { useVenmoUsername } from '../../hooks/useVenmoUsername';
 import { useBillStore } from '../../store/billStore';
 
 import { deriveAssignedTotals, formatCurrency } from '../../lib/billMath';
 import { deriveBillName } from '../../lib/billName';
+import { isValidVenmoUsername } from '../../lib/venmo';
 
 import { DURATION, EASE } from '../../constants/animations';
 
@@ -28,7 +31,10 @@ export const ResultScreen: React.FC = () => {
   const setScreen = useBillStore((s) => s.setScreen);
   const { shareBill, isSharing } = useShare();
   const { toast, showToast, dismissToast } = useToast();
+  const { username: venmoUsername, setUsername: setVenmoUsername } = useVenmoUsername();
   const [hasShared, setHasShared] = useState(false);
+
+  const activeVenmoUsername = isValidVenmoUsername(venmoUsername) ? venmoUsername : undefined;
 
   const { subtotal, taxAmount, tipAmount, total, receiptSummaries, receiptCount, itemCount, breakdowns } = useMemo(
     () => deriveAssignedTotals(receipts, people),
@@ -42,7 +48,7 @@ export const ResultScreen: React.FC = () => {
   const title = deriveBillName(name);
 
   const handleShare = async () => {
-    const result = await shareBill();
+    const result = await shareBill(activeVenmoUsername);
     if ('error' in result) {
       showToast(result.error, 'error');
       return;
@@ -120,6 +126,16 @@ export const ResultScreen: React.FC = () => {
         className="mb-10"
       >
         <BillSummary summaries={receiptSummaries} subtotal={subtotal} tax={taxAmount} tip={tipAmount} />
+      </motion.div>
+
+      {/* Venmo handle — travels with the shared bill to enable per-person pay buttons there */}
+      <motion.div
+        initial={{ opacity: 0, y: 6 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: DURATION.smooth, ease: EASE.out, delay: 0.08 }}
+        className="mb-10"
+      >
+        <VenmoField value={venmoUsername} onChange={setVenmoUsername} />
       </motion.div>
 
       {/* Per-person */}

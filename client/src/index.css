@@ -28,6 +28,10 @@
   --brand-light: #3A9069;
   --brand-subtle: rgba(45, 125, 90, 0.12);
 
+  /* Venmo — brand blue for the third-party pay handoff (not a UI accent) */
+  --venmo: #3D95CE;
+  --venmo-light: #4FA3D6;
+
   /* Status */
   --success: #4ADE80;
   --warning: #FACC15;

@@ -14,16 +14,21 @@ type ShareResult = { url: string; shared: boolean; copied: boolean } | { error: 
  * sheet (`navigator.share`) when available (the default on mobile), otherwise via a clipboard copy.
  * Share and clipboard each consume the user-activation, so the path is chosen up front; the clipboard
  * fallback starts synchronously with a pending URL (`ClipboardItem`) so it survives the round-trip on iOS Safari.
- * @returns `{ shareBill, isSharing }` — `shareBill()` resolves to `{ url, shared, copied }` (which path succeeded) or `{ error }` carrying a user-safe message on a rejected payload / network failure; `isSharing` is true while a request is in flight
+ * @returns `{ shareBill, isSharing }` — `shareBill(venmoUsername?)` resolves to `{ url, shared, copied }` (which path succeeded) or `{ error }` carrying a user-safe message on a rejected payload / network failure; `isSharing` is true while a request is in flight
  */
 export function useShare() {
   const [isSharing, setIsSharing] = useState(false);
 
-  const shareBill = useCallback(async (): Promise<ShareResult> => {
+  const shareBill = useCallback(async (venmoUsername?: string | null): Promise<ShareResult> => {
     setIsSharing(true);
 
     const state = useBillStore.getState();
-    const payload = { name: state.name || null, receipts: state.receipts, people: state.people };
+    const payload = {
+      name: state.name || null,
+      receipts: state.receipts,
+      people: state.people,
+      venmoUsername: venmoUsername || null,
+    };
     const urlPromise = createBill(payload);
 
     // Clipboard path: pre-arm synchronously (preserves iOS activation). Only when we won't use the
@@ -69,7 +74,7 @@ export function useShare() {
 }
 
 /** POST the bill and return its share URL; rejects with a user-safe message on failure. */
-async function createBill(payload: { name: string | null; receipts: Receipt[]; people: Person[] }): Promise<string> {
+async function createBill(payload: { name: string | null; receipts: Receipt[]; people: Person[]; venmoUsername: string | null }): Promise<string> {
   const response = await fetch(`${API_URL}/api/bills`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },

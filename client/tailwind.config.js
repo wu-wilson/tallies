@@ -9,6 +9,10 @@ export default {
           light: 'var(--brand-light)',
           subtle: 'var(--brand-subtle)',
         },
+        venmo: {
+          DEFAULT: 'var(--venmo)',
+          light: 'var(--venmo-light)',
+        },
         bg: {
           primary: 'var(--bg-primary)',
           secondary: 'var(--bg-secondary)',

@@ -10,6 +10,8 @@ export interface SharedBill {
   name?: string;
   receipts: Receipt[];
   people: Person[];
+  /** Bill owner's Venmo handle; absent on bills shared before the field existed (no pay button rendered). */
+  venmoUsername?: string;
   /** ISO timestamp at which the share link expires. Absent on bills shared before the field was added. */
   expiresAt?: string;
 }
@@ -19,6 +21,7 @@ interface RawBill {
   name?: string | null;
   receipts?: Receipt[];
   people?: Person[];
+  venmoUsername?: string | null;
   merchant?: string | null;
   date?: string | null;
   items?: BillItem[];
@@ -32,7 +35,13 @@ interface RawBill {
 /** Wrap a legacy flat payload (no `receipts`) as a single-receipt bill so old share links keep rendering. */
 function normalizeBill(data: RawBill): SharedBill {
   if (Array.isArray(data.receipts)) {
-    return { name: data.name ?? undefined, receipts: data.receipts, people: data.people ?? [], expiresAt: data.expiresAt };
+    return {
+      name: data.name ?? undefined,
+      receipts: data.receipts,
+      people: data.people ?? [],
+      venmoUsername: data.venmoUsername ?? undefined,
+      expiresAt: data.expiresAt,
+    };
   }
   return {
     receipts: [

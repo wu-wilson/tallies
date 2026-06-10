@@ -2,9 +2,12 @@ import React, { useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import clsx from 'clsx';
 
-import { DURATION, EASE } from '../../constants/animations';
-import { formatCurrency } from '../../lib/billMath';
 import { Avatar } from '../common/Avatar';
+import { VenmoButton } from './VenmoButton';
+
+import { formatCurrency } from '../../lib/billMath';
+
+import { DURATION, EASE } from '../../constants/animations';
 
 import type { PersonBreakdown, PersonReceiptGroup } from '../../lib/billMath';
 
@@ -21,16 +24,21 @@ interface PersonCardProps {
   breakdown: PersonBreakdown;
   /** Position in the per-person list, used to stagger the entrance animation (50 ms per card). */
   index: number;
+  /** When set, appends a "Pay via Venmo" button for this person's total; omit to hide it. */
+  venmoUsername?: string;
+  /** Note prefilled on the Venmo payment screen; required only when `venmoUsername` is set. */
+  venmoMemo?: string;
 }
 
 /**
  * Card showing one person's items grouped by receipt, with each receipt's own subtotal, tax, and tip.
  * With multiple receipts, each group is a collapsible section (collapsed by default, showing merchant +
  * that receipt's total); a single receipt renders flat. The person's grand total sits in the card header.
- * @param props - Per-person breakdown plus its list index for stagger timing
+ * When a Venmo handle is supplied (and the person owes a positive amount), a pay button is appended.
+ * @param props - Per-person breakdown, list index for stagger timing, and optional Venmo pay details
  * @returns Animated card
  */
-export const PersonCard: React.FC<PersonCardProps> = ({ breakdown, index }) => {
+export const PersonCard: React.FC<PersonCardProps> = ({ breakdown, index, venmoUsername, venmoMemo }) => {
   const collapsible = breakdown.groups.length > 1;
 
   return (
@@ -57,6 +65,12 @@ export const PersonCard: React.FC<PersonCardProps> = ({ breakdown, index }) => {
           <ReceiptGroup key={group.receiptId} group={group} collapsible={collapsible} />
         ))}
       </div>
+
+      {venmoUsername && breakdown.total > 0 && (
+        <div className="border-t border-border-subtle px-5 py-3">
+          <VenmoButton username={venmoUsername} amount={breakdown.total} memo={venmoMemo ?? ''} />
+        </div>
+      )}
     </motion.div>
   );
 };

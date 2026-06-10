@@ -21,7 +21,7 @@ Source of truth: `server/src/routes/bills.ts`, `server/src/services/shortLinks.t
 
 ## Payload Shape
 
-The stored payload is `{ name?: string, receipts: Receipt[], people: Person[] }` (validated by `BillPayloadSchema`). `name` is the optional bill title — when empty, the display falls back to "Your bill" (`deriveBillName`). Each receipt carries its own `merchant`, `date`, `items`, and `tax`/`tip`. Aggregates are derived at render time, not persisted.
+The stored payload is `{ name?: string, receipts: Receipt[], people: Person[], venmoUsername?: string }` (validated by `BillPayloadSchema`). `name` is the optional bill title — when empty, the display falls back to "Your bill" (`deriveBillName`). `venmoUsername` is the bill owner's optional Venmo handle, surfacing a "Pay via Venmo" button per person on the shared view. Each receipt carries its own `merchant`, `date`, `items`, and `tax`/`tip`. Aggregates are derived at render time, not persisted.
 
 **Back-compat:** bills shared before multi-receipt used a flat shape (`{ merchant, date, items, tax, … }`). The server stores `data` as `JSONB` and returns it untouched, so the client normalizes on read — `useSharedBill`'s `normalizeBill()` wraps a legacy flat payload as a single-receipt bill. No SQL migration; old links keep rendering and age out via the 30-day TTL.
 

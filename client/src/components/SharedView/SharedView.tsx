@@ -9,7 +9,8 @@ import { PersonCard } from '../Result/PersonCard';
 import { useSharedBill } from '../../hooks/useSharedBill';
 
 import { deriveAssignedTotals, formatCurrency } from '../../lib/billMath';
-import { deriveBillName } from '../../lib/billName';
+import { deriveBillName, deriveMemoLabel } from '../../lib/billName';
+import { isValidVenmoUsername } from '../../lib/venmo';
 
 import { DURATION, EASE } from '../../constants/animations';
 
@@ -55,6 +56,8 @@ export const SharedView: React.FC = () => {
     : null;
   const title = deriveBillName(bill.name);
   const expiresLabel = bill.expiresAt ? formatExpiresAt(bill.expiresAt) : null;
+  const venmoUsername = bill.venmoUsername && isValidVenmoUsername(bill.venmoUsername) ? bill.venmoUsername : undefined;
+  const venmoMemo = `${deriveMemoLabel(bill.name, bill.receipts)} · split via tallies.dev`;
 
   return (
     <div className="mx-auto min-h-dvh max-w-2xl px-6 pb-[calc(32px+env(safe-area-inset-bottom))] pt-[calc(32px+env(safe-area-inset-top))]">
@@ -116,7 +119,13 @@ export const SharedView: React.FC = () => {
       </p>
       <div className="flex flex-col gap-2.5">
         {breakdowns.map((breakdown, index) => (
-          <PersonCard key={breakdown.personId} breakdown={breakdown} index={index} />
+          <PersonCard
+            key={breakdown.personId}
+            breakdown={breakdown}
+            index={index}
+            venmoUsername={venmoUsername}
+            venmoMemo={venmoMemo}
+          />
         ))}
       </div>
 

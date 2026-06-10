@@ -35,6 +35,8 @@ export const BillPayloadSchema = z.object({
   name: z.string().max(100).nullable().optional(),
   receipts: z.array(ReceiptSchema).max(20),
   people: z.array(PersonSchema).max(50),
+  /** Optional Venmo handle of whoever fronted the bill, so recipients get a pay button. Sanitized client-side; mirror that here. */
+  venmoUsername: z.string().regex(/^[A-Za-z0-9_-]{1,30}$/).nullable().optional(),
 });
 
 /** Inferred TypeScript type for a validated bill payload. */
