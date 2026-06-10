@@ -21,8 +21,8 @@ Source of truth: `client/src/lib/imageCompression.ts`, `server/src/routes/ocr.ts
 1. `multer` accepts a single file upload, capped at `config.maxImageSizeBytes` (default 5 MB). The `uploadReceipt` wrapper converts `MulterError` (e.g. `LIMIT_FILE_SIZE`) into a 413 with a user-safe message before reaching the handler.
 2. Magic-byte validation via `file-type` — rejects non-JPEG/PNG/WebP.
 3. Buffer converted to base64.
-4. Claude Sonnet (`claude-sonnet-4-6`) called with image + OCR prompt.
-5. Response text stripped of markdown fences, parsed as JSON.
+4. Claude Sonnet (`claude-sonnet-4-6`) called with image + OCR prompt — thinking disabled and `effort: 'low'` for latency, with `output_config.format` set to a JSON-schema mirror of `OcrResponseSchema` (`OCR_JSON_SCHEMA`) so the model returns conformant JSON.
+5. Response text parsed as JSON — structured output yields clean JSON; a markdown-fence strip remains as a defensive no-op.
 6. Validated with `OcrResponseSchema.safeParse()`.
 7. Merchant name stripped of addresses/phone numbers.
 8. Returns validated JSON to client.

@@ -6,7 +6,7 @@ import { fromBuffer } from 'file-type';
 
 import { config } from '../config';
 import { writeLimiter } from '../middleware/rateLimiter';
-import { OcrResponseSchema } from '../schemas/ocrResponse';
+import { OcrResponseSchema, OCR_JSON_SCHEMA } from '../schemas/ocrResponse';
 
 const router = Router();
 
@@ -142,7 +142,8 @@ router.post('/ocr', writeLimiter, uploadReceipt, async (req, res, next) => {
       max_tokens: 1500,
       // Receipt extraction is a bounded structured task — skip thinking and run low effort to cut latency.
       thinking: { type: 'disabled' },
-      output_config: { effort: 'low' },
+      // Constrain output to the receipt JSON schema (no fences/prose); Zod still validates value bounds.
+      output_config: { effort: 'low', format: { type: 'json_schema', schema: OCR_JSON_SCHEMA } },
       messages: [{
         role: 'user',
         content: [
