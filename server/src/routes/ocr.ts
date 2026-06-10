@@ -140,8 +140,9 @@ router.post('/ocr', writeLimiter, uploadReceipt, async (req, res, next) => {
     const response = await client.messages.create({
       model: 'claude-sonnet-4-6',
       max_tokens: 1500,
-      // Receipt extraction is a bounded structured task — skip thinking to cut latency.
+      // Receipt extraction is a bounded structured task — skip thinking and run low effort to cut latency.
       thinking: { type: 'disabled' },
+      output_config: { effort: 'low' },
       messages: [{
         role: 'user',
         content: [
