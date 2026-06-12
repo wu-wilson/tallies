@@ -24,7 +24,7 @@ Mobile-first. Use Tailwind defaults: `sm` (640px), `md` (768px), `lg` (1024px). 
 ## Viewport
 
 - Never use `h-screen` / `min-h-screen` (`100vh`) — use `min-h-dvh` (dynamic viewport).
-- `viewport-fit=cover` in `index.html` for notched devices.
+- `index.html` viewport: `viewport-fit=cover` (notched devices) + `maximum-scale=1.0` (prevents mobile focus-zoom on sub-16px inputs, so inputs keep the small type scale; manual pinch-zoom still works on iOS).
 - Top-edge scroll containers (Verify, Result, SharedView) clear the notch with `pt-[calc(32px+env(safe-area-inset-top))]` — the inset is 0 in a normal browser, non-zero in standalone/landscape. Vertically-centered screens (Capture, ImagePreview) don't need it.
 - Sticky bottom bars: `pb-[calc(12px+env(safe-area-inset-bottom))]`.
 - `min-h-dvh` (dynamic) suits Tallies' scrollable screens; reserve `svh` for a fixed, full-height, non-scrolling shell (none exists today) — never swap `min-h-dvh` → `h-svh` on scroll content, it clips overflow.
