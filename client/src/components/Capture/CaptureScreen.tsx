@@ -1,153 +1,195 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { motion } from 'framer-motion';
+import React, { useRef } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 
-import { TallyLogo, TALLY_DRAW_DURATION } from '../common/TallyLogo';
-import { ImagePreview } from './ImagePreview';
+import { TallyLogo } from '../common/TallyLogo';
 
+import { useOcr } from '../../hooks/useOcr';
 import { useBillStore } from '../../store/billStore';
 
+import { formatCurrency } from '../../lib/billMath';
+
+import { DURATION, EASE } from '../../constants/animations';
 import { MAX_RECEIPTS } from '../../constants/config';
 
-/** When the content reveal begins (after logo finishes drawing), in ms. */
-const REVEAL_DELAY_MS = Math.round(TALLY_DRAW_DURATION * 1000) + 50;
-const revealStyle: React.CSSProperties = {
-  animationDelay: `${REVEAL_DELAY_MS}ms`,
-};
-
-// Module-level gate: true once the landing entrance has played in this page lifetime.
-let hasPlayedEntrance = false;
-
-function markLandingEntrancePlayed(): void {
-  hasPlayedEntrance = true;
-}
+import type { ScanEntry } from '../../hooks/useOcr';
 
 /**
- * Landing screen — tally logo with Add receipts / Enter manually CTAs.
- * Renders `ImagePreview` instead once the user has picked one or more files (preview-and-scan sub-state).
- * @returns Landing layout or the image-preview sub-screen
+ * Capture screen — picks receipt images and scans them inline, showing each as a row with live status.
+ * Once at least one receipt has scanned, Continue commits the parsed receipts to the store and advances to
+ * Verify. A blank manual entry is offered when nothing has been added yet.
+ * @returns The capture layout (logo + drop zone when empty, otherwise the scanning receipt list)
  */
 export const CaptureScreen: React.FC = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const receipts = useBillStore((s) => s.receipts);
-  const addReceipt = useBillStore((s) => s.addReceipt);
+  const { entries, addFiles, removeEntry, isScanning, doneCount, commit } = useOcr();
   const setScreen = useBillStore((s) => s.setScreen);
-  const [capturedFiles, setCapturedFiles] = useState<File[]>([]);
-  const [previewUrls, setPreviewUrls] = useState<string[]>([]);
-  const [excludedCount, setExcludedCount] = useState(0);
-  // Recomputed on every render so paints after the first one (Change, Back,
-  // navigation back to landing) skip the animation classes entirely.
-  const shouldAnimate = !hasPlayedEntrance;
+  const addReceipt = useBillStore((s) => s.addReceipt);
 
-  useEffect(() => {
-    if (previewUrls.length === 0) return;
-    return () => previewUrls.forEach((url) => URL.revokeObjectURL(url));
-  }, [previewUrls]);
+  const atCap = entries.length >= MAX_RECEIPTS;
+  const canContinue = doneCount > 0 && !isScanning;
+  const isEmpty = entries.length === 0;
+  const scanningCount = entries.filter((e) => e.status === 'scanning').length;
+  const failedCount = entries.filter((e) => e.status === 'failed').length;
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const selected = e.target.files ? Array.from(e.target.files) : [];
-    if (selected.length === 0) return;
-    markLandingEntrancePlayed();
-    // Cap the batch at MAX_RECEIPTS so we never OCR — or build — a bill larger than sharing allows.
-    const files = selected.slice(0, MAX_RECEIPTS);
-    setCapturedFiles(files);
-    setPreviewUrls(files.map((file) => URL.createObjectURL(file)));
-    setExcludedCount(selected.length - files.length);
-  };
-
-  const handleReplace = () => {
-    setCapturedFiles([]);
-    setPreviewUrls([]);
-    setExcludedCount(0);
+    const files = e.target.files ? Array.from(e.target.files) : [];
+    if (files.length > 0) addFiles(files);
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
   const handleManualEntry = () => {
-    markLandingEntrancePlayed();
-    // Ensure the bill has at least one (blank) receipt to edit, without piling up
-    // blanks if the user returns to the landing and re-enters.
-    if (receipts.length === 0) addReceipt();
+    addReceipt();
     setScreen('verify');
   };
 
-  if (previewUrls.length > 0 && capturedFiles.length > 0) {
-    return (
-      <ImagePreview
-        files={capturedFiles}
-        previewUrls={previewUrls}
-        onReplace={handleReplace}
-        notice={excludedCount > 0 ? `Max ${MAX_RECEIPTS} receipts per bill` : undefined}
-      />
-    );
-  }
+  return (
+    <div className="mx-auto flex min-h-dvh max-w-xl flex-col px-5 pt-[calc(20px+env(safe-area-inset-top))]">
+      {/* App bar */}
+      <div className="mb-8 flex items-center justify-between">
+        <button
+          onClick={() => setScreen('landing')}
+          className="font-mono text-sm font-bold text-ink-faint transition-[filter] hover:text-ink"
+          aria-label="Back to home"
+        >
+          &larr; Back
+        </button>
+        {!isEmpty && (
+          <span className="font-mono text-[10px] font-bold tracking-[0.06em] text-ink-faint">
+            {doneCount} DONE
+            {scanningCount > 0 && ` · ${scanningCount} SCANNING`}
+            {failedCount > 0 && ` · ${failedCount} FAILED`}
+          </span>
+        )}
+      </div>
 
-  const revealClass = (suffix: 'left' | 'bottom') =>
-    shouldAnimate ? `animate-landing-from-${suffix}` : '';
+      <input ref={fileInputRef} type="file" accept="image/*" multiple onChange={handleFileChange} className="hidden" />
+
+      {isEmpty ? (
+        <div className="flex flex-1 flex-col items-center justify-center pb-16 text-center">
+          <div className="flex items-center gap-2.5">
+            <TallyLogo size={28} />
+            <span className="text-2xl font-black tracking-tight">TALLIES</span>
+          </div>
+          <p className="mt-3 font-mono text-xs text-ink-faint">Keep tallies on every tab.</p>
+
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            className="mt-8 flex w-full max-w-sm items-center justify-center gap-3 border-2 border-dashed border-ink bg-paper-raised px-5 py-6 transition-[filter] hover:brightness-[0.98]"
+          >
+            <span className="flex h-9 w-9 items-center justify-center bg-brand text-xl font-extrabold text-brand-on">+</span>
+            <span className="text-[15px] font-extrabold">Add receipts</span>
+            <span className="font-mono text-[11px] text-ink-ghost">UP TO {MAX_RECEIPTS}</span>
+          </button>
+
+          <button
+            onClick={handleManualEntry}
+            className="mt-5 font-mono text-xs text-ink-faint underline-offset-4 transition-[filter] hover:text-brand hover:underline"
+          >
+            or enter manually
+          </button>
+        </div>
+      ) : (
+        <>
+          <p className="mb-3 font-mono text-[11px] font-bold tracking-[0.06em] text-ink-faint">
+            RECEIPTS · {entries.length}
+          </p>
+          <div className="flex flex-col gap-3 pb-4">
+            <AnimatePresence initial={false}>
+              {entries.map((entry) => (
+                <ScanRow key={entry.id} entry={entry} onRemove={() => removeEntry(entry.id)} />
+              ))}
+            </AnimatePresence>
+
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              disabled={atCap}
+              className="flex items-center justify-center gap-2 border-2 border-dashed border-ink-faint bg-paper-raised px-4 py-3 text-sm font-bold text-ink-faint transition-[filter] hover:text-ink disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              <span className="text-base leading-none">+</span>
+              Add more · {entries.length}/{MAX_RECEIPTS}
+            </button>
+
+            {/* No usable scans yet (e.g. all failed) — keep manual entry reachable. */}
+            {doneCount === 0 && !isScanning && (
+              <button
+                onClick={handleManualEntry}
+                className="mt-1 self-center font-mono text-xs text-ink-faint underline-offset-4 transition-[filter] hover:text-brand hover:underline"
+              >
+                or enter manually
+              </button>
+            )}
+          </div>
+
+          {/* Sticky bottom bar */}
+          <div className="sticky bottom-0 -mx-5 mt-auto flex items-center gap-4 border-t border-ink bg-paper px-5 pb-[calc(14px+env(safe-area-inset-bottom))] pt-3.5">
+            <div className="flex-1">
+              <div className="font-mono text-[11px] text-ink-faint">
+                {doneCount} OF {entries.length} READY
+              </div>
+              <div className="text-[15px] font-extrabold">{isScanning ? 'Scanning…' : 'Ready to edit'}</div>
+            </div>
+            <motion.button
+              onClick={commit}
+              disabled={!canContinue}
+              className="bg-brand px-7 py-3.5 text-[15px] font-extrabold text-brand-on transition-[filter] hover:brightness-110 disabled:opacity-40"
+              whileTap={canContinue ? { scale: 0.98 } : undefined}
+            >
+              Continue &rarr;
+            </motion.button>
+          </div>
+        </>
+      )}
+    </div>
+  );
+};
+
+interface ScanRowProps {
+  entry: ScanEntry;
+  onRemove: () => void;
+}
+
+/** One receipt row in the capture list — thumbnail, name/merchant, and a scanning / done / failed status. */
+const ScanRow: React.FC<ScanRowProps> = ({ entry, onRemove }) => {
+  const title = entry.merchant || entry.fileName;
+  const status =
+    entry.status === 'scanning' ? (
+      <span className="font-mono text-[11px] text-brand">Scanning…</span>
+    ) : entry.status === 'failed' ? (
+      <span className="font-mono text-[11px] text-status-error">Couldn't scan · remove</span>
+    ) : (
+      <span className="font-mono text-[11px] text-ink-faint">
+        {entry.itemCount} ITEMS · {formatCurrency(entry.subtotal ?? 0)}
+      </span>
+    );
 
   return (
-    <div className="flex min-h-dvh flex-col items-center justify-center px-6 py-12">
-      <div className="flex w-full max-w-[280px] flex-col items-center text-center">
-        {/* Logo + wordmark */}
-        <div className="flex items-center gap-2.5">
-          <TallyLogo size={28} className="text-brand" animate={shouldAnimate} />
-          <span
-            className={`text-2xl font-semibold tracking-tight text-text-primary ${revealClass('left')}`}
-            style={revealStyle}
-          >
-            Tallies
-          </span>
-        </div>
-
-        {/* Tagline */}
-        <p
-          className={`mt-6 text-sm font-medium tracking-tight text-text-secondary sm:text-base ${revealClass('bottom')}`}
-          style={revealStyle}
-        >
-          Keep tallies on every tab.
-        </p>
-
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept="image/*"
-          multiple
-          onChange={handleFileChange}
-          className="hidden"
-        />
-
-        <motion.button
-          onClick={() => fileInputRef.current?.click()}
-          className={`mt-6 flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-brand text-sm font-medium text-white transition-[filter,background-color] hover:bg-brand-light ${revealClass('bottom')}`}
-          style={revealStyle}
-          whileTap={{ scale: 0.98 }}
-        >
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M4 3v18l2-1.5 2 1.5 2-1.5 2 1.5 2-1.5 2 1.5 2-1.5 2 1.5V3z" />
-            <line x1="8" y1="9" x2="16" y2="9" />
-            <line x1="8" y1="13" x2="13" y2="13" />
-          </svg>
-          Add receipts
-        </motion.button>
-
-        <div
-          className={`mt-6 flex w-full items-center gap-3 ${revealClass('bottom')}`}
-          style={revealStyle}
-        >
-          <div className="h-px flex-1 bg-border" />
-          <span className="text-[10px] font-medium uppercase tracking-[0.1em] text-text-tertiary">
-            or
-          </span>
-          <div className="h-px flex-1 bg-border" />
-        </div>
-
-        <motion.button
-          onClick={handleManualEntry}
-          className={`mt-6 rounded px-1.5 py-0.5 text-xs text-text-tertiary transition-colors duration-150 ease-out hover:bg-brand-subtle hover:text-brand ${revealClass('bottom')}`}
-          style={revealStyle}
-          whileTap={{ scale: 0.97 }}
-        >
-          Enter manually
-        </motion.button>
+    <motion.div
+      initial={{ opacity: 0, y: 4 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, x: -16 }}
+      transition={{ duration: DURATION.normal, ease: EASE.out }}
+      className="flex items-center gap-3.5 border border-ink bg-paper-raised p-3"
+    >
+      <img src={entry.previewUrl} alt="" className="h-14 w-11 shrink-0 border border-ink object-cover" />
+      <div className="min-w-0 flex-1">
+        <div className="truncate text-[15px] font-extrabold">{title}</div>
+        <div className="mt-1">{status}</div>
       </div>
-    </div>
+      {entry.status === 'scanning' ? (
+        <span className="h-6 w-6 shrink-0 animate-spin-slow rounded-full border-[2.5px] border-line border-t-brand" />
+      ) : entry.status === 'done' ? (
+        <span className="flex h-7 w-7 shrink-0 items-center justify-center border border-ink bg-brand text-sm font-extrabold text-brand-on">
+          ✓
+        </span>
+      ) : (
+        <button
+          onClick={onRemove}
+          aria-label="Remove receipt"
+          className="flex h-7 w-7 shrink-0 items-center justify-center border border-ink text-ink-faint transition-[filter] hover:text-status-error"
+        >
+          ×
+        </button>
+      )}
+    </motion.div>
   );
 };

@@ -15,20 +15,22 @@ interface VenmoFieldProps {
  * Optional input for the bill owner's Venmo handle; when set it travels with the shared bill so recipients
  * get a per-person pay button.
  * @param props - Current value and raw-input change handler
- * @returns A card with the Venmo wordmark, an `@`-prefixed input, and a helper line
+ * @returns A labeled field with an ink `@` prefix block and an `OPTIONAL` badge
  */
 export const VenmoField: React.FC<VenmoFieldProps> = ({ value, onChange }) => {
   return (
-    <div className="rounded-xl border border-border bg-bg-secondary px-4 py-4">
-      <div className="mb-3 flex items-center justify-between">
-        <VenmoWordmark width={48} height={12} className="text-venmo" />
-        <span className="text-[10px] font-medium uppercase tracking-[0.1em] text-text-tertiary">
-          Optional
+    <div>
+      <div className="mb-2 flex items-center justify-between">
+        <span className="text-base font-extrabold tracking-tight">
+          Your <VenmoWordmark /> handle
+        </span>
+        <span className="border border-ink-faint px-1.5 py-0.5 font-mono text-[9px] font-bold tracking-[0.06em] text-ink-faint">
+          OPTIONAL
         </span>
       </div>
 
-      <div className="relative">
-        <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 select-none text-sm text-text-tertiary">@</span>
+      <div className="flex items-stretch border border-ink bg-paper-raised focus-within:border-brand">
+        <span className="flex items-center bg-ink px-3.5 font-mono text-base font-bold text-brand-on">@</span>
         <input
           id="venmo-handle"
           name="venmo-handle"
@@ -36,7 +38,7 @@ export const VenmoField: React.FC<VenmoFieldProps> = ({ value, onChange }) => {
           value={value}
           onChange={(e) => onChange(e.target.value)}
           maxLength={VENMO_USERNAME_MAX_LENGTH}
-          placeholder="e.g. jane-smith"
+          placeholder="jane-smith"
           aria-label="Venmo username"
           autoCapitalize="none"
           autoCorrect="off"
@@ -46,11 +48,13 @@ export const VenmoField: React.FC<VenmoFieldProps> = ({ value, onChange }) => {
           data-lpignore="true"
           data-bwignore
           data-form-type="other"
-          className="h-10 w-full rounded-lg border border-border bg-bg-tertiary pl-7 pr-3 text-sm text-text-primary outline-none placeholder:text-text-tertiary"
+          className="flex-1 bg-transparent px-3.5 py-3 text-base font-bold text-ink outline-none placeholder:font-normal placeholder:text-ink-ghost"
         />
       </div>
 
-      <p className="mt-2 text-xs text-text-tertiary">Add your handle so the group can pay you back.</p>
+      <p className="mt-2 font-mono text-[10.5px] leading-relaxed text-ink-faint">
+        Add it and friends get a Pay button on Venmo. Skip it and they'll just see what they owe.
+      </p>
     </div>
   );
 };

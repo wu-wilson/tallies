@@ -8,7 +8,7 @@ import { PrimaryCta } from './PrimaryCta';
  */
 export const StickyAction: React.FC = () => {
   return (
-    <div className="sticky bottom-0 z-30 -mx-6 mt-8 bg-bg-primary px-6 pb-[calc(12px+env(safe-area-inset-bottom))] pt-3 lg:hidden">
+    <div className="sticky bottom-0 z-30 -mx-5 mt-8 border-t border-ink bg-paper px-5 pb-[calc(12px+env(safe-area-inset-bottom))] pt-3 lg:hidden">
       <PrimaryCta />
     </div>
   );

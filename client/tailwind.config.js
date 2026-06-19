@@ -4,32 +4,33 @@ export default {
   theme: {
     extend: {
       colors: {
+        paper: {
+          DEFAULT: 'var(--paper)',
+          raised: 'var(--paper-raised)',
+        },
+        sand: {
+          DEFAULT: 'var(--sand)',
+          2: 'var(--sand-2)',
+          3: 'var(--sand-3)',
+        },
+        ink: {
+          DEFAULT: 'var(--ink)',
+          soft: 'var(--ink-soft)',
+          muted: 'var(--ink-muted)',
+          faint: 'var(--ink-faint)',
+          ghost: 'var(--ink-ghost)',
+        },
+        line: {
+          DEFAULT: 'var(--line)',
+          grid: 'var(--line-grid)',
+        },
+        scrim: 'var(--scrim)',
         brand: {
           DEFAULT: 'var(--brand)',
-          light: 'var(--brand-light)',
-          subtle: 'var(--brand-subtle)',
+          on: 'var(--on-brand)',
         },
-        venmo: {
-          DEFAULT: 'var(--venmo)',
-          light: 'var(--venmo-light)',
-        },
-        bg: {
-          primary: 'var(--bg-primary)',
-          secondary: 'var(--bg-secondary)',
-          tertiary: 'var(--bg-tertiary)',
-        },
-        border: {
-          DEFAULT: 'var(--border-color)',
-          subtle: 'var(--border-subtle)',
-        },
-        text: {
-          primary: 'var(--text-primary)',
-          secondary: 'var(--text-secondary)',
-          tertiary: 'var(--text-tertiary)',
-        },
-        surface: {
-          hover: 'var(--surface-hover)',
-        },
+        rust: 'var(--rust)',
+        venmo: 'var(--venmo)',
         status: {
           success: 'var(--success)',
           warning: 'var(--warning)',
@@ -37,8 +38,14 @@ export default {
         },
       },
       fontFamily: {
-        sans: ['"Inter"', 'system-ui', 'sans-serif'],
-        mono: ['"JetBrains Mono"', 'monospace'],
+        sans: ['"Archivo"', 'system-ui', 'sans-serif'],
+        mono: ['"Space Mono"', 'monospace'],
+      },
+      borderWidth: {
+        DEFAULT: '1.5px',
+      },
+      borderColor: {
+        DEFAULT: 'var(--ink)',
       },
     },
   },

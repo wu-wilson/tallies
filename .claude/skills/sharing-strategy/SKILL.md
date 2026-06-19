@@ -10,14 +10,13 @@ Source of truth: `server/src/routes/bills.ts`, `server/src/services/shortLinks.t
 
 ## Flow
 
-1. User taps "Share with group" on Result screen.
-2. Client serializes bill state → `POST /api/bills` with Zod-validated payload.
-3. Server generates 8-char base62 short ID, inserts into `bills` table.
-4. Returns `{ id }` to client.
-5. Client constructs share URL: `${origin}/b/${id}`.
-6. Opens the native share sheet (`navigator.share`) when available, otherwise copies the URL to the clipboard (toast on the copy path).
+1. User taps "Create share link" on the Result screen.
+2. `useShare.createShareLink(venmoUsername?)` serializes bill state → `POST /api/bills` with a Zod-validated payload.
+3. Server generates an 8-char base62 short ID, inserts into the `bills` table.
+4. Returns `{ id }`; the client builds `${origin}/b/${id}`, stores it as `shareUrl`, and advances to the **Share screen**.
+5. The Share screen surfaces the link with **Copy** (`copyLink`) and **Share…** (`nativeShare`) actions, plus a Venmo-pay note when a handle was supplied.
 
-**Share vs. clipboard:** both consume the user-activation, so the path is chosen up front. The clipboard fallback uses a pending-promise `ClipboardItem` so the copy survives the round-trip on iOS Safari (a plain post-`await` write is blocked there).
+**Two-step by design:** creating the link and handing it off are separate user gestures, so `copyLink`/`nativeShare` each run inside their own activation — no `ClipboardItem` pre-arming needed. `nativeShare` uses `navigator.share` when available and falls back to a clipboard copy (`'shared'`/`'copied'`/`'failed'`).
 
 ## Payload Shape
 

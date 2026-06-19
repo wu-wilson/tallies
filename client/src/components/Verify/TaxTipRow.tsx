@@ -17,7 +17,7 @@ interface TaxTipRowProps {
 /**
  * Editable tax or tip amount with a $/% segmented toggle and optional preset percentages.
  * @param props - Row configuration
- * @returns Two-line row (value + toggle on top, quick buttons below when applicable)
+ * @returns Row with label, editable value, $/% toggle, and (for tip) preset percentages below
  */
 export const TaxTipRow: React.FC<TaxTipRowProps> = ({
   label,
@@ -37,13 +37,13 @@ export const TaxTipRow: React.FC<TaxTipRowProps> = ({
   };
 
   return (
-    <div className="flex flex-col gap-2 py-2">
+    <div className="px-3.5 py-3 sm:px-4">
       <div className="flex items-center justify-between gap-3">
-        <span className="text-sm text-text-secondary">{label}</span>
+        <span className="text-[15px] font-bold">{label}</span>
 
-        <div className="flex items-center gap-2">
-          <div className="flex items-baseline gap-0.5 font-mono text-sm tabular-nums">
-            {!isPercent && <span className="text-text-tertiary">$</span>}
+        <div className="flex items-center gap-2.5">
+          <div className="flex items-baseline gap-0.5 font-mono text-sm font-bold tabular-nums">
+            {!isPercent && <span className="text-ink-faint">$</span>}
             {isEditing ? (
               <input
                 type="number"
@@ -53,7 +53,7 @@ export const TaxTipRow: React.FC<TaxTipRowProps> = ({
                 onChange={(e) => setEditValue(e.target.value)}
                 onBlur={handleBlur}
                 onKeyDown={(e) => e.key === 'Enter' && handleBlur()}
-                className="w-16 rounded bg-transparent px-2 text-right text-text-primary outline-none"
+                className="w-16 border border-transparent bg-sand-2 px-2 py-1 text-right text-ink outline-none"
                 autoFocus
               />
             ) : (
@@ -62,27 +62,21 @@ export const TaxTipRow: React.FC<TaxTipRowProps> = ({
                   setEditValue(value.toString());
                   setIsEditing(true);
                 }}
-                className="rounded px-2 text-text-primary transition-colors hover:text-brand"
+                className="px-1 transition-[filter] hover:text-brand"
               >
                 {isPercent ? value : value.toFixed(2)}
               </button>
             )}
-            {isPercent && <span className="text-text-tertiary">%</span>}
+            {isPercent && <span className="text-ink-faint">%</span>}
           </div>
 
-          <div className="relative flex h-6 overflow-hidden rounded bg-bg-primary">
-            {/* Sliding indicator — pure CSS transform, no Framer Motion */}
-            <div
-              aria-hidden
-              className="pointer-events-none absolute inset-y-0 left-0 w-6 rounded bg-bg-tertiary transition-transform duration-150 ease-out"
-              style={{ transform: isPercent ? 'translateX(100%)' : 'translateX(0)' }}
-            />
+          <div className="flex border border-ink">
             <button
               type="button"
               onClick={() => onTogglePercent(false)}
               className={clsx(
-                'relative w-6 text-[11px] font-medium transition-colors',
-                !isPercent ? 'text-text-primary' : 'text-text-tertiary hover:text-text-secondary',
+                'w-8 py-1 text-[11px] font-extrabold transition-colors',
+                !isPercent ? 'bg-brand text-brand-on' : 'text-ink-faint hover:text-ink',
               )}
             >
               $
@@ -91,8 +85,8 @@ export const TaxTipRow: React.FC<TaxTipRowProps> = ({
               type="button"
               onClick={() => onTogglePercent(true)}
               className={clsx(
-                'relative w-6 text-[11px] font-medium transition-colors',
-                isPercent ? 'text-text-primary' : 'text-text-tertiary hover:text-text-secondary',
+                'w-8 border-l border-ink py-1 text-[11px] font-extrabold transition-colors',
+                isPercent ? 'bg-brand text-brand-on' : 'text-ink-faint hover:text-ink',
               )}
             >
               %
@@ -102,14 +96,14 @@ export const TaxTipRow: React.FC<TaxTipRowProps> = ({
       </div>
 
       {quickButtons && isPercent && (
-        <div className="flex gap-3">
+        <div className="mt-2.5 flex gap-4 font-mono text-xs font-bold">
           {quickButtons.map((pct) => (
             <button
               key={pct}
               onClick={() => onValueChange(pct)}
               className={clsx(
-                'text-[11px] font-medium transition-colors',
-                value === pct ? 'text-brand' : 'text-text-tertiary hover:text-text-secondary',
+                'transition-colors',
+                value === pct ? 'text-brand' : 'text-ink-ghost hover:text-ink-faint',
               )}
             >
               {pct}%

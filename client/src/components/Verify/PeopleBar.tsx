@@ -7,8 +7,8 @@ import { useBillStore } from '../../store/billStore';
 import { Avatar } from '../common/Avatar';
 
 /**
- * Horizontal pill list of people on the bill, with an inline autofocus input for adding more.
- * @returns Wrapped row of person pills plus the add control
+ * Wrapped row of people on the bill, each a bordered pill, with an inline autofocus input for adding more.
+ * @returns The "PEOPLE" section — person pills plus the add control
  */
 export const PeopleBar: React.FC = () => {
   const { people, addPerson, removePerson } = useBillStore();
@@ -39,17 +39,15 @@ export const PeopleBar: React.FC = () => {
   return (
     <div>
       <div className="mb-3 flex items-center justify-between">
-        <span className="text-[10px] font-medium uppercase tracking-[0.1em] text-text-tertiary">
-          People
-        </span>
+        <span className="font-mono text-[11px] font-bold tracking-[0.06em] text-ink-faint">PEOPLE</span>
         {people.length > 0 && (
-          <span className="font-mono text-[10px] text-text-tertiary">
+          <span className="font-mono text-[10px] text-ink-ghost">
             {people.length}/{MAX_PEOPLE}
           </span>
         )}
       </div>
 
-      <div className="flex flex-wrap items-center gap-2">
+      <div className="flex flex-wrap items-center gap-2.5">
         <AnimatePresence mode="popLayout">
           {people.map((person) => (
             <motion.div
@@ -59,30 +57,23 @@ export const PeopleBar: React.FC = () => {
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.7, opacity: 0 }}
               transition={EASE.spring}
-              className="flex shrink-0 items-center gap-1.5 rounded-full bg-bg-secondary py-1 pl-1 pr-1.5"
+              className="flex max-w-[170px] shrink-0 items-center gap-2 border border-ink bg-paper-raised py-1.5 pl-1.5 pr-2.5"
             >
               <Avatar name={person.name} color={person.color} size="sm" />
-              <span className="text-xs font-medium text-text-primary">{person.name}</span>
+              <span className="truncate text-sm font-bold text-ink">{person.name}</span>
               <button
                 onClick={() => removePerson(person.id)}
-                className="ml-0.5 flex h-6 w-6 items-center justify-center rounded-full text-text-tertiary transition-colors hover:bg-surface-hover hover:text-text-primary"
+                className="shrink-0 text-base font-bold leading-none text-ink-faint transition-[filter] hover:text-status-error"
                 aria-label={`Remove ${person.name}`}
               >
-                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-                  <line x1="18" y1="6" x2="6" y2="18" />
-                  <line x1="6" y1="6" x2="18" y2="18" />
-                </svg>
+                ×
               </button>
             </motion.div>
           ))}
         </AnimatePresence>
 
         {isAdding ? (
-          <motion.div
-            initial={{ scale: 0.9, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            transition={{ duration: DURATION.fast }}
-          >
+          <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ duration: DURATION.fast }}>
             <input
               ref={inputRef}
               type="text"
@@ -92,20 +83,17 @@ export const PeopleBar: React.FC = () => {
               onKeyDown={handleKeyDown}
               placeholder="e.g. Alex"
               maxLength={MAX_NAME_LENGTH}
-              className="h-8 w-28 rounded-full bg-bg-secondary px-3 text-xs text-text-primary outline-none placeholder:text-text-tertiary"
+              className="w-32 border border-ink bg-paper-raised px-3 py-2 text-sm font-bold text-ink outline-none placeholder:font-normal placeholder:text-ink-ghost"
               autoCapitalize="words"
             />
           </motion.div>
         ) : people.length < MAX_PEOPLE ? (
           <motion.button
             onClick={handleAdd}
-            className="flex h-8 shrink-0 items-center gap-1 rounded-full border border-dashed border-border px-3 text-xs font-medium text-text-secondary transition-colors hover:border-brand hover:text-brand"
+            className="flex shrink-0 items-center gap-1.5 border-2 border-dashed border-ink-faint px-3 py-2 text-sm font-bold text-ink-faint transition-[filter] hover:text-ink"
             whileTap={{ scale: 0.95 }}
           >
-            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-              <line x1="12" y1="5" x2="12" y2="19" />
-              <line x1="5" y1="12" x2="19" y2="12" />
-            </svg>
+            <span className="text-base leading-none">+</span>
             {people.length === 0 ? 'Add person' : 'Add'}
           </motion.button>
         ) : null}

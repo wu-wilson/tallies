@@ -16,58 +16,89 @@ const SPLIT_NAMES_LIMIT = 4;
 
 /** Render the "split with" line: names for small splits, a "split N ways" count once it gets crowded. */
 function splitLabel(splitWith: string[]): string {
-  if (splitWith.length <= SPLIT_NAMES_LIMIT) return `split with ${splitWith.join(', ')}`;
-  return `split ${splitWith.length + 1} ways`;
+  if (splitWith.length <= SPLIT_NAMES_LIMIT) return `SPLIT WITH ${splitWith.join(', ')}`.toUpperCase();
+  return `SPLIT ${splitWith.length + 1} WAYS`;
 }
 
 interface PersonCardProps {
   breakdown: PersonBreakdown;
   /** Position in the per-person list, used to stagger the entrance animation (50 ms per card). */
   index: number;
-  /** When set, appends a "Pay via Venmo" button for this person's total; omit to hide it. */
+  /** `result` is the owner's editing view (tax/tip additions); `shared` adds split-with lines and a pay button. */
+  variant: 'result' | 'shared';
+  /** When set (shared variant), appends a "Pay" button for this person's total; omit to hide it. */
   venmoUsername?: string;
   /** Note prefilled on the Venmo payment screen; required only when `venmoUsername` is set. */
   venmoMemo?: string;
 }
 
 /**
- * Card showing one person's items grouped by receipt, with each receipt's own subtotal, tax, and tip.
- * With multiple receipts, each group is a collapsible section (collapsed by default, showing merchant +
- * that receipt's total); a single receipt renders flat. The person's grand total sits in the card header.
- * When a Venmo handle is supplied (and the person owes a positive amount), a pay button is appended.
- * @param props - Per-person breakdown, list index for stagger timing, and optional Venmo pay details
- * @returns Animated card
+ * Card showing one person's items grouped by receipt, with each receipt's own subtotal/tax/tip and the
+ * person's grand total in the header. Starts collapsed; tapping the header expands or collapses the detail.
+ * In the shared variant each item notes who it was split with, and a Venmo pay button is appended when a
+ * handle is set.
+ * @param props - Per-person breakdown, list index, variant, and optional Venmo details
+ * @returns Animated, expandable card
  */
-export const PersonCard: React.FC<PersonCardProps> = ({ breakdown, index, venmoUsername, venmoMemo }) => {
-  const collapsible = breakdown.groups.length > 1;
+export const PersonCard: React.FC<PersonCardProps> = ({
+  breakdown,
+  index,
+  variant,
+  venmoUsername,
+  venmoMemo,
+}) => {
+  const [expanded, setExpanded] = useState(false);
+  const multiGroup = breakdown.groups.length > 1;
+  const itemCount = breakdown.groups.reduce((n, g) => n + g.items.length, 0);
 
   return (
     <motion.div
       initial={{ opacity: 0, y: 6 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: DURATION.smooth, ease: EASE.out, delay: 0.08 + index * 0.05 }}
-      className="overflow-hidden rounded-xl border border-border bg-bg-secondary"
+      className="border border-ink bg-paper-raised"
     >
-      {/* Header */}
-      <div className="flex items-center justify-between px-5 pb-3 pt-4">
-        <div className="flex items-center gap-2.5">
-          <Avatar name={breakdown.personName} color={breakdown.personColor} size="sm" />
-          <span className="text-sm font-semibold text-text-primary">{breakdown.personName}</span>
+      <button
+        type="button"
+        onClick={() => setExpanded((e) => !e)}
+        aria-expanded={expanded}
+        className="flex w-full items-center gap-3 px-4 py-3.5 text-left"
+      >
+        <Avatar name={breakdown.personName} color={breakdown.personColor} size="md" />
+        <div className="min-w-0 flex-1">
+          <div className="truncate text-base font-extrabold">{breakdown.personName}</div>
+          <div className="font-mono text-[10px] tracking-[0.04em] text-ink-faint">
+            {itemCount} {itemCount === 1 ? 'ITEM' : 'ITEMS'}
+          </div>
         </div>
-        <span className="font-mono text-base font-semibold tabular-nums text-text-primary">
-          {formatCurrency(breakdown.total)}
-        </span>
-      </div>
+        <span className="font-mono text-lg font-bold tabular-nums">{formatCurrency(breakdown.total)}</span>
+        <svg
+          className={clsx('shrink-0 text-ink-faint transition-transform duration-150', expanded && 'rotate-90')}
+          width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
+        >
+          <polyline points="9 18 15 12 9 6" />
+        </svg>
+      </button>
 
-      {/* Per-receipt groups */}
-      <div className="space-y-4 px-5 pb-4 pt-1">
-        {breakdown.groups.map((group) => (
-          <ReceiptGroup key={group.receiptId} group={group} collapsible={collapsible} />
-        ))}
-      </div>
+      <AnimatePresence initial={false}>
+        {expanded && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: DURATION.normal, ease: EASE.out }}
+            className="overflow-hidden border-t border-ink"
+          >
+            {breakdown.groups.map((group) => (
+              <PersonGroup key={group.receiptId} group={group} variant={variant} showMerchant={multiGroup} />
+            ))}
+          </motion.div>
+        )}
+      </AnimatePresence>
 
-      {venmoUsername && breakdown.total > 0 && (
-        <div className="border-t border-border-subtle px-5 py-3">
+      {/* Pay button stays visible whether or not the breakdown is expanded — paying is the primary action. */}
+      {variant === 'shared' && venmoUsername && breakdown.total > 0 && (
+        <div className="border-t border-ink p-3.5">
           <VenmoButton username={venmoUsername} amount={breakdown.total} memo={venmoMemo ?? ''} />
         </div>
       )}
@@ -75,98 +106,59 @@ export const PersonCard: React.FC<PersonCardProps> = ({ breakdown, index, venmoU
   );
 };
 
-interface ReceiptGroupProps {
+interface PersonGroupProps {
   group: PersonReceiptGroup;
-  /** When true, render a collapsible merchant header (multi-receipt bills); when false, render flat (single receipt). */
-  collapsible: boolean;
+  variant: 'result' | 'shared';
+  /** When true (multi-receipt bills), prefix the group with a merchant header + its receipt total. */
+  showMerchant: boolean;
 }
 
-/** One receipt's slice of a person's breakdown — two-line item rows plus the receipt's subtotal/tax/tip. */
-const ReceiptGroup: React.FC<ReceiptGroupProps> = ({ group, collapsible }) => {
-  // Multi-receipt groups start collapsed (clean overview); single-receipt renders flat, so the value is moot there.
-  const [collapsed, setCollapsed] = useState(collapsible);
+/** One receipt's slice of a person's breakdown — optional merchant header, item rows, and the receipt's totals. */
+const PersonGroup: React.FC<PersonGroupProps> = ({ group, variant, showMerchant }) => {
   const receiptTotal = group.subtotal + group.taxShare + group.tipShare;
 
-  const details = (
-    <>
-      <div className="space-y-2">
+  return (
+    <div>
+      {showMerchant && (
+        <div className="flex items-center justify-between gap-3 border-b border-line bg-paper px-4 py-2.5">
+          <span className="truncate font-mono text-[10.5px] font-bold tracking-[0.05em]">
+            ▾ {(group.merchant || 'Untitled receipt').toUpperCase()}
+          </span>
+          <span className="font-mono text-xs font-bold tabular-nums">{formatCurrency(receiptTotal)}</span>
+        </div>
+      )}
+
+      <div className="px-4 py-3.5">
         {group.items.map((item) => (
-          <div key={item.itemId} className="text-xs">
+          <div key={item.itemId} className="mb-2.5 last:mb-0">
             <div className="flex items-baseline justify-between gap-3">
-              <span className="min-w-0 flex-1 truncate text-text-secondary">{item.name || 'Unnamed'}</span>
-              <span className="shrink-0 font-mono tabular-nums text-text-secondary">{formatCurrency(item.amount)}</span>
+              <span className="min-w-0 flex-1 truncate text-sm font-bold">{item.name || 'Unnamed'}</span>
+              <span className="shrink-0 font-mono text-[13px] font-bold tabular-nums">{formatCurrency(item.amount)}</span>
             </div>
-            {item.splitWith.length > 0 && (
-              <p className="mt-0.5 text-text-tertiary">{splitLabel(item.splitWith)}</p>
+            {variant === 'shared' && item.splitWith.length > 0 && (
+              <p className="mt-0.5 font-mono text-[10px] tracking-[0.03em] text-ink-ghost">{splitLabel(item.splitWith)}</p>
             )}
           </div>
         ))}
       </div>
 
-      <div className="mt-2.5 space-y-1 border-t border-border-subtle pt-2.5 text-xs">
-        <SummaryLine label="Subtotal" value={formatCurrency(group.subtotal)} />
-        <SummaryLine label="Tax" value={formatCurrency(group.taxShare)} />
-        <SummaryLine label="Tip" value={formatCurrency(group.tipShare)} />
+      <div className="border-t-2 border-dashed border-ink px-4 py-3 font-mono text-[11.5px] text-ink-muted">
+        {variant === 'shared' && <Line label="SUBTOTAL" value={formatCurrency(group.subtotal)} />}
+        <Line label={variant === 'shared' ? 'TAX' : '+ TAX SHARE'} value={formatCurrency(group.taxShare)} />
+        <Line label={variant === 'shared' ? 'TIP' : '+ TIP SHARE'} value={formatCurrency(group.tipShare)} />
       </div>
-    </>
-  );
-
-  if (!collapsible) {
-    return <div>{details}</div>;
-  }
-
-  return (
-    <div>
-      <button
-        type="button"
-        onClick={() => setCollapsed((c) => !c)}
-        aria-expanded={!collapsed}
-        className="group flex w-full items-center justify-between gap-3 text-left"
-      >
-        <span className="flex min-w-0 items-center gap-1.5">
-          <svg
-            className={clsx(
-              'shrink-0 text-text-tertiary transition-[transform,color] duration-150 group-hover:text-text-secondary',
-              !collapsed && 'rotate-90',
-            )}
-            width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
-          >
-            <polyline points="9 18 15 12 9 6" />
-          </svg>
-          <span className="truncate text-[10px] font-medium uppercase tracking-[0.1em] text-text-tertiary transition-colors group-hover:text-text-secondary">
-            {group.merchant || 'Untitled receipt'}
-          </span>
-        </span>
-        <span className="shrink-0 font-mono text-xs tabular-nums text-text-secondary">
-          {formatCurrency(receiptTotal)}
-        </span>
-      </button>
-
-      <AnimatePresence initial={false}>
-        {!collapsed && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: DURATION.normal, ease: EASE.out }}
-            className="overflow-hidden"
-          >
-            <div className="pt-3">{details}</div>
-          </motion.div>
-        )}
-      </AnimatePresence>
     </div>
   );
 };
 
-interface SummaryLineProps {
+interface LineProps {
   label: string;
   value: string;
 }
 
-const SummaryLine: React.FC<SummaryLineProps> = ({ label, value }) => (
-  <div className="flex justify-between">
-    <span className="text-text-tertiary">{label}</span>
-    <span className="font-mono tabular-nums text-text-secondary">{value}</span>
+const Line: React.FC<LineProps> = ({ label, value }) => (
+  <div className="flex justify-between py-0.5">
+    <span>{label}</span>
+    <span className="font-bold tabular-nums">{value}</span>
   </div>
 );

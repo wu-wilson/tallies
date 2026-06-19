@@ -11,10 +11,11 @@ Before releases, after major changes, or periodically during development.
 ## What to check
 
 ### Core Flows
-- Scan → verify → result flow works end-to-end (single receipt)
-- Batch scan of multiple receipts → each becomes a receipt; per-receipt tax/tip honored
+- Landing → capture → verify → result → share flow works end-to-end (single receipt)
+- Batch scan: each picked image becomes a row with live scanning/done/failed status; Continue commits the done ones
 - "Add receipt" (blank) on Verify works; removing a receipt works (last receipt not removable)
 - Manual entry → result flow works
+- Assign sheet (Everyone / Clear / per-person) and inline avatar toggling both update assignments
 - Per-receipt "Split evenly" assigns all people to that receipt's items (and toggles off)
 - Per-person totals sum each person's per-receipt proportional tax/tip correctly
 - Bill sharing roundtrips (POST then GET produces identical state)
@@ -24,8 +25,8 @@ Before releases, after major changes, or periodically during development.
 - OCR errors fall back to manual entry without blocking
 
 ### UI/UX
-- Every screen renders correctly in the dark-only palette
-- Tap targets follow the documented tiers (in-flow `h-10` covers `PrimaryCta`/`StickyAction`/`ImagePreview`; landing `h-11`); flag anything smaller
+- Every screen renders correctly in the light warm-paper palette (1.5px ink borders, square corners, no shadows)
+- Tap targets are comfortable (full-width `py-4` primary CTAs; avatars 22–40px); flag anything cramped
 - No horizontal overflow on any screen
 - All states have designed UI (loading, empty, error)
 - Animations ≤ 300ms

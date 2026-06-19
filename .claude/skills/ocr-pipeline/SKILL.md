@@ -10,11 +10,11 @@ Source of truth: `client/src/lib/imageCompression.ts`, `server/src/routes/ocr.ts
 
 ## Client Side
 
-1. User supplies one or more images via `<input type="file" accept="image/*" multiple>` — mobile users get the native action sheet (camera, photo library, files); desktop users get the OS file picker. Each image becomes one receipt. A selection is capped at `MAX_RECEIPTS` (20) — extras are dropped with a notice, and `loadOcrResults` slices defensively so the store never exceeds the cap that sharing (`BillPayloadSchema.receipts.max(20)`) enforces.
-2. Preview shows a single large image or a thumbnail grid, with "Change" / "Scan" buttons.
-3. On "Scan", each image is `compressImage`-d (max 1500px long edge, JPEG quality 0.85) and OCR'd **sequentially** — `useOcr.submitReceipts(files)` shows per-image progress ("Scanning 2 of 3…") and respects the write rate limit.
+1. On the capture screen the user supplies one or more images via `<input type="file" accept="image/*" multiple>` — mobile users get the native action sheet (camera, photo library, files); desktop users get the OS file picker. Each image becomes one receipt. The list is capped at `MAX_RECEIPTS` (20) — `addFiles` ignores files past the cap, matching what sharing (`BillPayloadSchema.receipts.max(20)`) enforces.
+2. Each picked image appears immediately as a row in the capture list (`ScanEntry`) with its thumbnail and a `scanning` status.
+3. `useOcr.addFiles(files)` `compressImage`-s each image (max 1500px long edge, JPEG quality 0.85) and OCRs them **sequentially** — respecting the write rate limit — flipping each row to `done` (with merchant + item count + subtotal) or `failed`.
 4. Each compressed blob is sent as multipart FormData to `POST /api/ocr`.
-5. `useOcr` tracks `isLoading`, `progress`, and `error`, and loads successful results via the store's `loadOcrResults`. **Partial failure:** images that scan successfully become receipts and the flow advances to Verify, with a one-shot `scanNotice` ("Couldn't scan N of M receipts") surfaced as a Toast on Verify. If *every* image fails, the user stays on the preview and `error` drives the Toast there.
+5. Once at least one row is `done`, Continue calls `useOcr.commit()`, which loads the successful results via the store's `loadOcrResults` and advances to Verify. **Partial failure:** failed rows stay visible inline and can be removed; on commit, a one-shot `scanNotice` ("Couldn't scan N of M receipts") is surfaced as a Toast on Verify.
 
 ## Server Side
 
@@ -73,4 +73,4 @@ OcrResponseSchema = z.object({
 - Missing API key: logged server-side; client gets 500 "OCR is unavailable — please try again later".
 - Invalid file type: 400 "Invalid file type — upload a JPEG, PNG, or WebP image".
 - Model returned no text / non-JSON / schema mismatch: all three collapse to 422 "Couldn't read the receipt — please try a clearer photo"; the underlying detail (raw text, Zod issues) goes to server logs.
-- Empty items array (model successfully parsed but found no receipt): `useOcr` short-circuits before `loadOcrResult` and throws "Couldn't identify a receipt" so the user stays on `ImagePreview` with a toast instead of landing on an empty Verify screen.
+- Empty items array (model successfully parsed but found no receipt): `useOcr` marks that row `failed` rather than building a receipt, so the user can remove it and re-add instead of landing on an empty Verify screen.

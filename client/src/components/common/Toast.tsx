@@ -6,7 +6,7 @@ import { DURATION, EASE } from '../../constants/animations';
 
 interface ToastProps {
   message: string;
-  /** Visual treatment — `'success'` (green check), `'error'` (red X), or `'warning'` (amber alert). Defaults to `'success'`. */
+  /** Visual treatment — `'success'` (green check), `'error'` (red X), or `'warning'` (rust alert). Defaults to `'success'`. */
   variant?: 'success' | 'error' | 'warning';
   isVisible: boolean;
   /** Increments on every `showToast` so back-to-back shows reset the 3s auto-dismiss timer. */
@@ -45,10 +45,10 @@ export const Toast: React.FC<ToastProps> = ({
             exit={{ opacity: 0, y: 24 }}
             transition={{ duration: DURATION.normal, ease: EASE.out }}
             className={clsx(
-              'pointer-events-auto flex max-w-sm items-start gap-2 rounded-lg border bg-bg-secondary px-4 py-2.5 text-xs font-medium',
-              variant === 'success' && 'border-status-success/40 text-status-success',
-              variant === 'error' && 'border-status-error/40 text-status-error',
-              variant === 'warning' && 'border-status-warning/40 text-status-warning',
+              'pointer-events-auto flex max-w-sm items-start gap-2 border border-ink bg-paper-raised px-4 py-2.5 font-mono text-xs font-bold',
+              variant === 'success' && 'text-brand',
+              variant === 'error' && 'text-status-error',
+              variant === 'warning' && 'text-rust',
             )}
           >
             {variant === 'success' ? (

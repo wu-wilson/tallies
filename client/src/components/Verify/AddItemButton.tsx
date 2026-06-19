@@ -11,9 +11,9 @@ interface AddItemButtonProps {
 }
 
 /**
- * Dashed-border button that appends a blank item to a receipt; disabled once the receipt hits `MAX_ITEMS`.
+ * Dashed-border control that appends a blank item to a receipt; disabled once the receipt hits `MAX_ITEMS`.
  * @param props - Target receipt ID and whether the item cap is reached
- * @returns Full-width "Add item" button
+ * @returns Inline "Add item" button
  */
 export const AddItemButton: React.FC<AddItemButtonProps> = ({ receiptId, disabled }) => {
   const addItem = useBillStore((s) => s.addItem);
@@ -22,13 +22,10 @@ export const AddItemButton: React.FC<AddItemButtonProps> = ({ receiptId, disable
     <motion.button
       onClick={() => addItem(receiptId)}
       disabled={disabled}
-      className="flex h-10 w-full items-center justify-center gap-1.5 rounded-xl border border-dashed border-border-subtle px-4 text-[13px] font-medium text-text-tertiary transition-colors hover:border-border hover:text-brand disabled:cursor-not-allowed disabled:opacity-40"
-      whileTap={disabled ? undefined : { scale: 0.99 }}
+      className="flex items-center gap-1.5 border-2 border-dashed border-brand px-3.5 py-1.5 text-[13px] font-extrabold text-brand transition-[filter] hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-40"
+      whileTap={disabled ? undefined : { scale: 0.98 }}
     >
-      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-        <line x1="12" y1="5" x2="12" y2="19" />
-        <line x1="5" y1="12" x2="19" y2="12" />
-      </svg>
+      <span className="text-base leading-none">+</span>
       Add item
     </motion.button>
   );

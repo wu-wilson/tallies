@@ -6,9 +6,9 @@ import { deriveBillTotals, formatCurrency } from '../../lib/billMath';
 import { useBillStore } from '../../store/billStore';
 
 /**
- * The "See breakdown $X.XX →" CTA — inline at the end of the column on `lg+`, wrapped by `StickyAction` (sticky-bottom) on mobile.
- * Disabled with a hint string until the bill has ≥2 people, ≥1 item, and every item is assigned.
- * @returns Full-width brand button (or muted disabled button with hint)
+ * The "See breakdown — $X →" CTA — inline at the end of the column on `lg+`, wrapped by `StickyAction`
+ * (sticky-bottom) on mobile. Disabled with a hint until the bill has ≥2 people, ≥1 item, and every item assigned.
+ * @returns Full-width brand button (or a muted disabled button with a hint)
  */
 export const PrimaryCta: React.FC = () => {
   const { people, receipts, setScreen } = useBillStore();
@@ -32,22 +32,17 @@ export const PrimaryCta: React.FC = () => {
       onClick={() => isReady && setScreen('result')}
       disabled={!isReady}
       className={clsx(
-        'flex h-10 w-full items-center justify-between rounded-lg px-4 text-[13px] font-medium transition-[filter,background-color]',
-        isReady
-          ? 'bg-brand text-white hover:bg-brand-light'
-          : 'cursor-not-allowed bg-bg-secondary text-text-tertiary',
+        'flex w-full items-center justify-center gap-2 px-4 py-4 text-[15px] font-extrabold transition-[filter]',
+        isReady ? 'bg-brand text-brand-on hover:brightness-110' : 'cursor-not-allowed border border-ink bg-sand-2 text-ink-faint',
       )}
-      whileTap={isReady ? { scale: 0.98 } : undefined}
+      whileTap={isReady ? { scale: 0.99 } : undefined}
     >
-      <span>{isReady ? 'See breakdown' : hint}</span>
-      {isReady && (
-        <span className="flex items-center gap-1.5 font-mono text-xs tabular-nums text-white/80">
-          {formatCurrency(total)}
-          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
-            <line x1="5" y1="12" x2="19" y2="12" />
-            <polyline points="12 5 19 12 12 19" />
-          </svg>
-        </span>
+      {isReady ? (
+        <>
+          See breakdown — {formatCurrency(total)} &rarr;
+        </>
+      ) : (
+        hint
       )}
     </motion.button>
   );

@@ -2,25 +2,26 @@
 
 ## What This Is
 
-Tallies is a mobile-first web app for splitting bills. Three screens: Capture (scan one or more receipts), Verify & Assign (edit items, assign to people), Result (per-person breakdowns as a designed financial document). A bill can combine multiple receipts (e.g. dinner + drinks elsewhere) into one breakdown. Bills can be shared via short URLs stored in Postgres. OCR powered by Claude Sonnet.
+Tallies is a mobile-first web app for splitting bills with an editorial-brutalist visual language. The `/` flow runs through store-driven screens: Landing (marketing front door), Capture (scan one or more receipts with live per-receipt status), Verify & Assign (edit items, assign to people), Result (per-person breakdowns), and Share (the post-create confirmation with the short link). A bill can combine multiple receipts (e.g. dinner + drinks elsewhere) into one breakdown. Bills can be shared via short URLs stored in Postgres. OCR powered by Claude Sonnet.
 
 ## Architecture
 
-- **client/** — React 18 + Vite + TypeScript. Tailwind CSS v3. Zustand for state. Framer Motion for animation. React Router for `/` and `/b/:id`. All bill math runs client-side. Production build served via `serve -s dist -l $PORT`.
+- **client/** — React 18 + Vite + TypeScript. Tailwind CSS v3. Zustand for state. Framer Motion for animation. React Router for `/` and `/b/:id` (with a catch-all not-found route). All bill math runs client-side. Production build served via `serve -s dist -l $PORT`.
 - **server/** — Express + TypeScript. Anthropic SDK for OCR proxy. pg + pg-pool for Postgres. Zod validation at every boundary. Two route files: `/api/ocr` and `/api/bills`. Stateless except for bill sharing.
 - **cron/** — TypeScript Node script. Deletes expired bills weekly (Sundays 09:00 UTC). No HTTP surface — connects to Postgres, runs the delete, logs count, exits.
 
 ## Key Decisions
 
-- Mobile-first (portrait iPhone primary target). Base body 14px; responsive type via Tailwind utilities.
-- Dark mode only — palette defined via CSS custom properties on `:root`. No theme toggle.
-- Forest green brand accent (`#2D7D5A`), used sparingly for primary CTAs and focus rings.
-- Fonts: Inter (UI/body/headers via weight + tracking), JetBrains Mono (numbers/currency).
-- 8 person colors (sage, gold, plum, slate, rose, taupe, teal, clay) — functional, never used as UI accents.
+- Mobile-first (portrait iPhone primary target), with responsive desktop layouts. Base body 14px; responsive type via Tailwind utilities.
+- Editorial-brutalist, light warm-paper aesthetic — palette defined via CSS custom properties on `:root`. No dark mode, no theme toggle. Flat planes, 1.5px solid-ink borders (the default `border` width/color), square corners, no shadows; sectioning via uppercase Space-Mono micro-labels and hairline rules.
+- Forest green brand accent (`#2C5545`) on warm paper (`#F6F2E9`), with a rust accent (`#B0573A`); ink is `#1B1A17`. Brand green carries primary CTAs and active states; Venmo blue (`#008CFF`) is reserved for the pay handoff.
+- Fonts: Archivo (UI/body, 800–900 weights for display), Space Mono (numbers, currency, micro-labels).
+- 8 person colors (sage, gold, plum, slate, rose, taupe, teal, clay) — warm-toned, functional, never used as UI accents.
 - A bill is one or more receipts (each with its own merchant, items, and tax/tip) plus a shared set of people; people are referenced by ID in each item's `assignees`, so they span all receipts.
 - Proportional tax/tip math, computed **per receipt**: each person's share of a receipt's tax/tip is proportional to their subtotal within that receipt, then summed across receipts. Full precision internally, round to cents only at display.
-- In-flow microinteractions ≤300ms via Framer Motion (`DURATION.fast`/`normal`/`smooth` in `constants/animations.ts`); tap response scales to 0.97–0.98. The one-time landing entrance (logo draw + content reveal) is a deliberate exception — gated to play once per page load.
-- Single Zustand store drives the capture/verify/result flow; it holds the bill as an optional `name`, `receipts[]`, and a shared `people[]`. Screen state for that flow lives in the store, not separate routes; `SharedView` is the only other route (`/b/:id`).
+- In-flow microinteractions ≤300ms via Framer Motion (`DURATION.fast`/`normal`/`smooth` in `constants/animations.ts`); tap response scales to 0.97–0.99. No page-load/entrance animations — screens render immediately.
+- Single Zustand store drives the `landing → capture → verify → result → share` flow; it holds the bill as an optional `name`, `receipts[]`, a shared `people[]`, and the created `shareUrl`. Screen state for that flow lives in the store, not separate routes; `SharedView` is the only other route (`/b/:id`), with a catch-all falling through to the not-found screen.
+- Item assignment is editable inline (tap an assigned avatar to drop it) and via a modal assign sheet (Everyone / Clear / per-person), reused across viewports.
 - OCR via Claude Sonnet (`claude-sonnet-4-6`) with image input and Zod-validated JSON output.
 - Sharing: 8-char base62 short IDs via `crypto.randomBytes(8)`. 30-day TTL enforced by weekly cron + on-read expiry check.
 - Graceful degradation: if Postgres isn't reachable, capture/verify/result still work — only sharing is disabled.

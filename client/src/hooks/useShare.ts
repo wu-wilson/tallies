@@ -6,22 +6,24 @@ import { API_URL } from '../constants/config';
 
 import type { Person, Receipt } from '../types/bill';
 
-/** Result of a share attempt — whether it reached the native sheet, the clipboard, or failed. */
-type ShareResult = { url: string; shared: boolean; copied: boolean } | { error: string };
+/** Result of creating a share link — the URL on success, or a user-safe message on failure. */
+type CreateResult = { url: string } | { error: string };
 
 /**
- * Hook that posts the current bill to `/api/bills` and shares the resulting URL — via the native share
- * sheet (`navigator.share`) when available (the default on mobile), otherwise via a clipboard copy.
- * Share and clipboard each consume the user-activation, so the path is chosen up front; the clipboard
- * fallback starts synchronously with a pending URL (`ClipboardItem`) so it survives the round-trip on iOS Safari.
- * @returns `{ shareBill, isSharing }` — `shareBill(venmoUsername?)` resolves to `{ url, shared, copied }` (which path succeeded) or `{ error }` carrying a user-safe message on a rejected payload / network failure; `isSharing` is true while a request is in flight
+ * Hook for the two-step share flow: create the link, then hand it off. `createShareLink` posts the current
+ * bill to `/api/bills` and returns its short URL; the dedicated Share screen then copies or opens it via the
+ * native sheet. Splitting create from share means each copy/share runs inside its own user gesture, so no
+ * clipboard pre-arming is needed.
+ * @returns `{ createShareLink, copyLink, nativeShare, hasNativeShare, isCreating }` — `createShareLink(venmoUsername?)`
+ * resolves to `{ url }` or `{ error }`; `copyLink(url)` resolves `true` when the clipboard write succeeds;
+ * `nativeShare(url)` resolves `'shared'`/`'copied'`/`'failed'`; `hasNativeShare` reflects share-sheet support;
+ * `isCreating` is true while the POST is in flight
  */
 export function useShare() {
-  const [isSharing, setIsSharing] = useState(false);
+  const [isCreating, setIsCreating] = useState(false);
 
-  const shareBill = useCallback(async (venmoUsername?: string | null): Promise<ShareResult> => {
-    setIsSharing(true);
-
+  const createShareLink = useCallback(async (venmoUsername?: string | null): Promise<CreateResult> => {
+    setIsCreating(true);
     const state = useBillStore.getState();
     const payload = {
       name: state.name || null,
@@ -29,52 +31,52 @@ export function useShare() {
       people: state.people,
       venmoUsername: venmoUsername || null,
     };
-    const urlPromise = createBill(payload);
-
-    // Clipboard path: pre-arm synchronously (preserves iOS activation). Only when we won't use the
-    // native sheet, since clipboard.write consumes the activation navigator.share also needs.
-    if (typeof navigator.share !== 'function') {
-      const copyPromise = copyViaClipboardItem(urlPromise);
-      try {
-        const url = await urlPromise;
-        const copied = await copyPromise;
-        setIsSharing(false);
-        return { url, shared: false, copied };
-      } catch (err) {
-        setIsSharing(false);
-        return { error: messageFor(err) };
-      }
-    }
-
-    // Native-share path.
     try {
-      const url = await urlPromise;
-      try {
-        await navigator.share({ title: 'Tallies', url });
-        setIsSharing(false);
-        return { url, shared: true, copied: false };
-      } catch (err) {
-        // User dismissed the sheet — treat as done, nothing to recover.
-        if (err instanceof DOMException && err.name === 'AbortError') {
-          setIsSharing(false);
-          return { url, shared: true, copied: false };
-        }
-        // Share failed — best-effort copy so the user still gets the link.
-        const copied = await copyText(url);
-        setIsSharing(false);
-        return { url, shared: false, copied };
-      }
+      const url = await createBill(payload);
+      return { url };
     } catch (err) {
-      setIsSharing(false);
-      return { error: messageFor(err) };
+      return { error: err instanceof Error ? err.message : 'Failed to share' };
+    } finally {
+      setIsCreating(false);
     }
   }, []);
 
-  return { shareBill, isSharing };
+  const copyLink = useCallback(async (url: string): Promise<boolean> => {
+    if (!navigator.clipboard?.writeText) return false;
+    try {
+      await navigator.clipboard.writeText(url);
+      return true;
+    } catch {
+      return false;
+    }
+  }, []);
+
+  const nativeShare = useCallback(
+    async (url: string): Promise<'shared' | 'copied' | 'failed'> => {
+      if (typeof navigator.share === 'function') {
+        try {
+          await navigator.share({ title: 'Tallies', url });
+          return 'shared';
+        } catch (err) {
+          // User dismissed the sheet — treat as done, nothing to recover.
+          if (err instanceof DOMException && err.name === 'AbortError') return 'shared';
+        }
+      }
+      return (await copyLink(url)) ? 'copied' : 'failed';
+    },
+    [copyLink],
+  );
+
+  return { createShareLink, copyLink, nativeShare, hasNativeShare: typeof navigator.share === 'function', isCreating };
 }
 
 /** POST the bill and return its share URL; rejects with a user-safe message on failure. */
-async function createBill(payload: { name: string | null; receipts: Receipt[]; people: Person[]; venmoUsername: string | null }): Promise<string> {
+async function createBill(payload: {
+  name: string | null;
+  receipts: Receipt[];
+  people: Person[];
+  venmoUsername: string | null;
+}): Promise<string> {
   const response = await fetch(`${API_URL}/api/bills`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -86,36 +88,4 @@ async function createBill(payload: { name: string | null; receipts: Receipt[]; p
   }
   const { id } = await response.json();
   return `${window.location.origin}/b/${id}`;
-}
-
-/** Narrow an unknown error to a user-safe message. */
-function messageFor(err: unknown): string {
-  return err instanceof Error ? err.message : 'Failed to share';
-}
-
-/**
- * Copy the eventual URL to the clipboard while preserving the user-activation across the wait.
- * Prefers `ClipboardItem` with a pending blob (the only form that survives an `await` on iOS Safari),
- * and falls back to `writeText` when `ClipboardItem` is unavailable or rejects.
- * @param urlPromise - Promise resolving to the URL to copy
- * @returns `true` if the clipboard write succeeded, `false` otherwise
- */
-function copyViaClipboardItem(urlPromise: Promise<string>): Promise<boolean> {
-  if (typeof ClipboardItem !== 'undefined' && navigator.clipboard?.write) {
-    try {
-      return navigator.clipboard
-        .write([new ClipboardItem({ 'text/plain': urlPromise.then((u) => new Blob([u], { type: 'text/plain' })) })])
-        .then(() => true)
-        .catch(() => urlPromise.then(copyText).catch(() => false));
-    } catch {
-      // ClipboardItem rejected the pending promise synchronously (older browsers) — fall back below.
-    }
-  }
-  return urlPromise.then(copyText).catch(() => false);
-}
-
-/** Plain-text clipboard write of a known URL; resolves `false` if the clipboard is unavailable or blocked. */
-function copyText(url: string): Promise<boolean> {
-  if (!navigator.clipboard?.writeText) return Promise.resolve(false);
-  return navigator.clipboard.writeText(url).then(() => true).catch(() => false);
 }

@@ -1,7 +1,7 @@
 import type { PersonColorKey } from '../constants/colors';
 
-/** Which flow screen is currently visible. */
-export type Screen = 'capture' | 'verify' | 'result';
+/** Which flow screen is currently visible. `landing` is the marketing front door; `share` is the post-create confirmation. */
+export type Screen = 'landing' | 'capture' | 'verify' | 'result' | 'share';
 
 /** A person on the bill, with an auto-assigned color. */
 export interface Person {

@@ -22,12 +22,15 @@ interface BillState {
   people: Person[];
   /** Transient one-shot notice (e.g. "1 of 2 receipts couldn't be scanned") surfaced once on Verify, then cleared. */
   scanNotice: string | null;
+  /** Share URL for the current bill once its link has been created; drives the Share screen. Null until created. */
+  shareUrl: string | null;
 }
 
 interface BillActions {
   setScreen: (screen: Screen) => void;
   loadOcrResults: (results: OcrResult[]) => void;
   setScanNotice: (notice: string | null) => void;
+  setShareUrl: (url: string | null) => void;
   setName: (name: string) => void;
 
   addReceipt: () => void;
@@ -43,6 +46,7 @@ interface BillActions {
   updateItem: (receiptId: string, itemId: string, updates: Partial<Pick<BillItem, 'name' | 'price'>>) => void;
   toggleAssignment: (receiptId: string, itemId: string, personId: string) => void;
   assignAllToItem: (receiptId: string, itemId: string) => void;
+  clearItemAssignees: (receiptId: string, itemId: string) => void;
 
   splitReceiptEvenly: (receiptId: string) => void;
   unsplitReceiptEvenly: (receiptId: string) => void;
@@ -54,11 +58,12 @@ interface BillActions {
 }
 
 const initialState: BillState = {
-  screen: 'capture',
+  screen: 'landing',
   name: '',
   receipts: [],
   people: [],
   scanNotice: null,
+  shareUrl: null,
 };
 
 /** Fresh client-side UUID — used as the ID for in-memory receipts, people, and items. */
@@ -131,9 +136,10 @@ function mapItem(receipt: Receipt, itemId: string, fn: (i: BillItem) => BillItem
 }
 
 /**
- * Zustand store — single source of truth for the bill flow (screen, receipts, people).
+ * Zustand store — single source of truth for the bill flow (screen, receipts, people, share URL).
  * A bill holds one or more receipts (each with its own merchant, items, and tax/tip) plus a shared set of people.
- * `loadOcrResults` bakes a batch of OCR payloads into receipts and transitions to Verify.
+ * The `landing → capture → verify → result → share` screen lives here; `loadOcrResults` bakes a batch of OCR
+ * payloads into receipts and transitions to Verify.
  * @returns The store hook; call with a selector to subscribe to a slice
  */
 export const useBillStore = create<BillState & BillActions>()((set, get) => ({
@@ -153,6 +159,8 @@ export const useBillStore = create<BillState & BillActions>()((set, get) => ({
   },
 
   setScanNotice: (scanNotice) => set({ scanNotice }),
+
+  setShareUrl: (shareUrl) => set({ shareUrl }),
 
   setName: (name) => set({ name }),
 
@@ -242,6 +250,14 @@ export const useBillStore = create<BillState & BillActions>()((set, get) => ({
     set({
       receipts: mapReceipt(get().receipts, receiptId, (r) =>
         mapItem(r, itemId, (i) => ({ ...i, assignees: allIds })),
+      ),
+    });
+  },
+
+  clearItemAssignees: (receiptId, itemId) => {
+    set({
+      receipts: mapReceipt(get().receipts, receiptId, (r) =>
+        mapItem(r, itemId, (i) => ({ ...i, assignees: [] })),
       ),
     });
   },

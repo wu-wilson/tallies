@@ -1,91 +1,78 @@
 ---
 name: design-tokens
-description: CSS variables, person colors, fonts, radii, and animation durations used in Tallies.
+description: CSS variables, person colors, fonts, borders, and animation durations used in Tallies.
 user-invocable: true
 ---
 
 # Design Tokens
 
-Source of truth: `client/src/index.css` (CSS custom properties) and `client/src/constants/animations.ts` (durations).
+Editorial-brutalist, light warm-paper system. Source of truth: `client/src/index.css` (CSS custom properties) and `client/src/constants/animations.ts` (durations). Tailwind maps every variable to a semantic token in `client/tailwind.config.js` — never hardcode hex in components.
 
-## Colors (dark mode only — defined on `:root`)
+## Colors (light mode — defined on `:root`)
 
-**Background tiers**
-- `--bg-primary`: `#111114`
-- `--bg-secondary`: `#1a1a1e`
-- `--bg-tertiary`: `#232328`
+**Surfaces (warm paper, lightest to deepest)**
+- `--paper`: `#F6F2E9` (body background, `bg-paper`)
+- `--paper-raised`: `#FBF9F3` (cards, `bg-paper-raised`)
+- `--sand`: `#E4E0D4` (`bg-sand`)
+- `--sand-2`: `#EDE8DB` (input/field fills, `bg-sand-2`)
+- `--sand-3`: `#E3DCC9` (header bands, `bg-sand-3`)
 
-**Borders**
-- `--border-color`: `#2e2e34`
-- `--border-subtle`: `#232328`
+**Ink (text + borders)**
+- `--ink`: `#1B1A17` (`text-ink`, default border color)
+- `--ink-soft`: `#3a382f` (`text-ink-soft`)
+- `--ink-muted`: `#5c5848` (`text-ink-muted`)
+- `--ink-faint`: `#6a685c` (`text-ink-faint`)
+- `--ink-ghost`: `#8a8675` (`text-ink-ghost`)
 
-**Text**
-- `--text-primary`: `#ececee`
-- `--text-secondary`: `#8b8b96`
-- `--text-tertiary`: `#5c5c66`
+**Hairlines**
+- `--line`: `#ded8c8` (inner dividers, `border-line`)
+- `--line-grid`: `#f0ebdc` (grid-paper backdrop, `border-line-grid`)
 
-**Surface**
-- `--surface-hover`: `#232328`
+**Scrim**
+- `--scrim`: `rgba(27,26,23,0.5)` (modal backdrop, `bg-scrim`). Pre-baked alpha — Tailwind `/opacity` modifiers don't work on the hex-valued tokens, so use this for the dim rather than `bg-ink/50`.
 
-**Brand (forest green)**
-- `--brand`: `#2D7D5A`
-- `--brand-light`: `#3A9069`
-- `--brand-subtle`: `rgba(45, 125, 90, 0.12)`
+**Accents**
+- `--brand`: `#2C5545` (`bg-brand` / `text-brand`); `--on-brand`: `#F6F2E9` (`text-brand-on`)
+- `--rust`: `#B0573A` (`text-rust` — logo slash, eyebrows, warnings)
+- `--venmo`: `#008CFF` (`bg-venmo` / `text-venmo` — pay handoff only)
 
 **Status**
-- `--success`: `#4ADE80`
-- `--warning`: `#FACC15`
-- `--error`: `#F87171`
+- `--success`: `#2C5545` · `--warning`: `#B0573A` · `--error`: `#9B2C2C` (`text-status-*`)
 
 ## Person Colors (8, functional)
 
-Auto-assigned in `PERSON_COLORS` order from `client/src/constants/colors.ts`. Runtime hex values are CSS variables in `index.css`:
+Auto-assigned in `PERSON_COLORS` order from `client/src/constants/colors.ts`; warm-toned for the paper palette. Runtime hex values are CSS variables in `index.css`:
 
-| Key | Hex | Label |
-|---|---|---|
-| sage | `#8FAA82` | Sage |
-| gold | `#D4B175` | Gold |
-| plum | `#B398C2` | Plum |
-| slate | `#7E9EBA` | Slate |
-| rose | `#D88FA6` | Rose |
-| taupe | `#B8A595` | Taupe |
-| teal | `#74C0AE` | Teal |
-| clay | `#D17A5E` | Clay |
+| Key | Hex |
+|---|---|
+| sage | `#2C5545` |
+| gold | `#C2912F` |
+| plum | `#7E5C86` |
+| slate | `#4D6A82` |
+| rose | `#B0573A` |
+| taupe | `#8A6D43` |
+| teal | `#2F7E6E` |
+| clay | `#1B1A17` |
 
-`Avatar.tsx` renders via `style={{ backgroundColor: 'var(--person-${color})' }}`.
+`Avatar.tsx` renders a 1.5px ink ring around `var(--person-<key>)` with a cream initial.
 
 ## Typography
 
-- Display/headers: Inter (`text-2xl font-semibold tracking-tight`)
-- Body: Inter (14px base on `body`; landing tagline scales `text-sm sm:text-base`)
-- Numbers/currency: JetBrains Mono (`font-mono tabular-nums`, right-aligned in totals)
+- Display/headers: Archivo (`font-black tracking-tight`, weights 800–900)
+- Body/UI: Archivo (14px base on `body`)
+- Numbers/currency/micro-labels: Space Mono (`font-mono tabular-nums`); uppercase tracked labels at `text-[10px]`–`text-[11px]`
+- The Venmo wordmark renders as italic system-font text (`VenmoWordmark`), kept off the Archivo face.
 
-Font feature settings on body: `font-feature-settings: 'cv11', 'ss01'`.
+## Borders & Radii
 
-## Border Radii
-
-- Cards: `rounded-xl` (12px)
-- Buttons: `rounded-lg` (8px)
-- Avatars / pills: `rounded-full`
-- Small inline buttons (e.g. landing "Enter manually"): `rounded` (4px)
-
-## Surfaces
-
-- Borders define edges (`border border-border` or `border-border-subtle` for inner dividers).
-- No card shadows in the current design — depth comes from bg tier shifts (`bg-bg-secondary` vs `bg-bg-tertiary/30/40`).
+- Default `border` is **1.5px solid ink** (set via `borderWidth.DEFAULT` + `borderColor.DEFAULT`). Inner dividers use `border-line`.
+- Cards, buttons, fields, and badges are **square** (no radius). Avatars and small dots are `rounded-full`.
+- Add/empty states use `border-2 border-dashed` (ink, ink-faint, or brand).
+- Depth comes from border + surface-tier shifts (`bg-paper` vs `bg-paper-raised` vs `bg-sand-*`); **no shadows**.
 
 ## Animation Durations (`constants/animations.ts`)
 
-- `fast`: 0.15s
-- `normal`: 0.2s
-- `smooth`: 0.3s
-
-`EASE.out = [0.16, 1, 0.3, 1]`. `EASE.spring` = stiffness 400, damping 30.
-
-Per-list stagger: PersonCard 50ms (with 80ms base delay), ItemCard 30ms.
-
-## Landing Entrance
-
-Tally logo draws via Framer Motion `pathLength` over `TALLY_DRAW_DURATION` (~1.19s). Content (wordmark + tagline + CTAs + OR + Enter manually) reveals together via CSS `landing-from-left` / `landing-from-bottom` keyframes (1000ms ease) at `animationDelay = TALLY_DRAW_DURATION + 50ms`.
-
-Gated by a module-level `hasPlayedEntrance` flag in `CaptureScreen.tsx` — entrance plays once per page load. Subsequent paints of the landing (verify-screen Back button, ImagePreview Change, anything that re-mounts the landing JSX) read the flag at render time and skip the animation classes. Flows that bypass or interrupt the landing (image capture, Enter manually) mark the flag eagerly so even mid-animation departures don't leave it unset.
+- `fast`: 0.15s · `normal`: 0.2s · `smooth`: 0.3s
+- `EASE.out = [0.16, 1, 0.3, 1]`; `EASE.spring` = stiffness 400, damping 30.
+- Per-list stagger: PersonCard 50ms (80ms base delay), ItemCard 30ms.
+- Keyframe utility in `index.css`: `animate-spin-slow` (scan spinners). No page-load/entrance animations — screens render immediately.
