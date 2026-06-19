@@ -65,7 +65,9 @@ export const CaptureScreen: React.FC = () => {
       <input ref={fileInputRef} type="file" accept="image/*" multiple onChange={handleFileChange} className="hidden" />
 
       {isEmpty ? (
-        <div className="flex flex-1 flex-col items-center justify-center pb-16 text-center">
+        // Top-aligned (like the populated receipts list) so it stays put across viewport heights and doesn't
+        // jump from center to top once the first receipt is added.
+        <div className="flex flex-col items-center pb-16 text-center">
           <div className="flex items-center gap-2.5">
             <TallyLogo size={28} />
             <span className="text-2xl font-black tracking-tight">TALLIES</span>
