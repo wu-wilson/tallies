@@ -76,7 +76,7 @@ export const PeopleBar: React.FC = () => {
         </AnimatePresence>
 
         {isAdding ? (
-          <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ duration: DURATION.fast }}>
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: DURATION.fast }}>
             <input
               ref={inputRef}
               type="text"
@@ -86,18 +86,18 @@ export const PeopleBar: React.FC = () => {
               onKeyDown={handleKeyDown}
               placeholder="e.g. Alex"
               maxLength={MAX_NAME_LENGTH}
-              className="w-32 border border-ink bg-paper-raised px-3 py-2 text-sm font-bold text-ink outline-none placeholder:font-normal placeholder:text-ink-ghost"
+              className="w-32 border-2 border-ink bg-paper-raised px-3 py-2 text-sm font-bold text-ink outline-none placeholder:font-normal placeholder:text-ink-ghost"
               autoCapitalize="words"
             />
           </motion.div>
         ) : people.length < MAX_PEOPLE ? (
           <motion.button
             onClick={handleAdd}
-            className="flex shrink-0 items-center gap-1.5 border-2 border-dashed border-ink-faint px-3 py-2 text-sm font-bold text-ink-faint transition-[filter] hover:text-ink"
+            className="flex w-32 shrink-0 items-center gap-1.5 border-2 border-dashed border-ink-faint px-3 py-2 text-sm font-bold text-ink-faint transition-[filter] hover:text-ink"
             whileTap={{ scale: 0.95 }}
           >
             <span className="text-base leading-none">+</span>
-            {people.length === 0 ? 'Add person' : 'Add'}
+            Add person
           </motion.button>
         ) : null}
       </div>
