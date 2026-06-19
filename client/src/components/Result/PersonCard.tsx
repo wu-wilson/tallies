@@ -113,21 +113,17 @@ interface PersonGroupProps {
   showMerchant: boolean;
 }
 
-/** One receipt's slice of a person's breakdown — optional merchant header, item rows, and the receipt's totals. */
+/**
+ * One receipt's slice of a person's breakdown — item rows plus the receipt's totals. With a merchant header
+ * (multi-receipt people) it's an independently collapsible section, collapsed by default; with a single
+ * receipt it renders flat (the person card itself is the toggle).
+ */
 const PersonGroup: React.FC<PersonGroupProps> = ({ group, variant, showMerchant }) => {
+  const [collapsed, setCollapsed] = useState(true);
   const receiptTotal = group.subtotal + group.taxShare + group.tipShare;
 
-  return (
-    <div>
-      {showMerchant && (
-        <div className="flex items-center justify-between gap-3 border-b border-line bg-paper px-4 py-2.5">
-          <span className="truncate font-mono text-[10.5px] font-bold tracking-[0.05em]">
-            ▾ {(group.merchant || 'Untitled receipt').toUpperCase()}
-          </span>
-          <span className="font-mono text-xs font-bold tabular-nums">{formatCurrency(receiptTotal)}</span>
-        </div>
-      )}
-
+  const body = (
+    <>
       <div className="px-4 py-3.5">
         {group.items.map((item) => (
           <div key={item.itemId} className="mb-2.5 last:mb-0">
@@ -147,6 +143,47 @@ const PersonGroup: React.FC<PersonGroupProps> = ({ group, variant, showMerchant 
         <Line label={variant === 'shared' ? 'TAX' : '+ TAX SHARE'} value={formatCurrency(group.taxShare)} />
         <Line label={variant === 'shared' ? 'TIP' : '+ TIP SHARE'} value={formatCurrency(group.tipShare)} />
       </div>
+    </>
+  );
+
+  // Single receipt: the person card is already the toggle, so render the slice flat.
+  if (!showMerchant) return <div>{body}</div>;
+
+  return (
+    <div>
+      <button
+        type="button"
+        onClick={() => setCollapsed((c) => !c)}
+        aria-expanded={!collapsed}
+        className="flex w-full items-center justify-between gap-3 border-b border-line bg-paper px-4 py-2.5 text-left"
+      >
+        <span className="flex min-w-0 items-center gap-1.5">
+          <svg
+            className={clsx('shrink-0 text-ink-faint transition-transform duration-150', !collapsed && 'rotate-90')}
+            width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"
+          >
+            <polyline points="9 18 15 12 9 6" />
+          </svg>
+          <span className="truncate font-mono text-[10.5px] font-bold tracking-[0.05em]">
+            {(group.merchant || 'Untitled receipt').toUpperCase()}
+          </span>
+        </span>
+        <span className="font-mono text-xs font-bold tabular-nums">{formatCurrency(receiptTotal)}</span>
+      </button>
+
+      <AnimatePresence initial={false}>
+        {!collapsed && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: DURATION.normal, ease: EASE.out }}
+            className="overflow-hidden"
+          >
+            {body}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
