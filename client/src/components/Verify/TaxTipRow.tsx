@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import clsx from 'clsx';
 
 interface TaxTipRowProps {
@@ -27,11 +27,11 @@ export const TaxTipRow: React.FC<TaxTipRowProps> = ({
   onTogglePercent,
   quickButtons,
 }) => {
-  const [isEditing, setIsEditing] = useState(false);
+  // Local draft so the field types freely; synced when `value` changes elsewhere (quick buttons, $/% toggle).
   const [editValue, setEditValue] = useState(value.toString());
+  useEffect(() => setEditValue(value.toString()), [value]);
 
   const handleBlur = () => {
-    setIsEditing(false);
     const parsed = parseFloat(editValue);
     onValueChange(isNaN(parsed) ? 0 : Math.max(0, parsed));
   };
@@ -42,31 +42,19 @@ export const TaxTipRow: React.FC<TaxTipRowProps> = ({
         <span className="text-[15px] font-bold">{label}</span>
 
         <div className="flex items-center gap-2.5">
-          <div className="flex items-baseline gap-0.5 font-mono text-sm font-bold tabular-nums">
+          <div className="flex items-center gap-0.5 font-mono text-sm font-bold tabular-nums">
             {!isPercent && <span className="text-ink-faint">$</span>}
-            {isEditing ? (
-              <input
-                type="number"
-                inputMode="decimal"
-                step={isPercent ? '1' : '0.01'}
-                value={editValue}
-                onChange={(e) => setEditValue(e.target.value)}
-                onBlur={handleBlur}
-                onKeyDown={(e) => e.key === 'Enter' && handleBlur()}
-                className="w-16 border border-transparent bg-sand-2 px-2 py-1 text-right text-ink outline-none"
-                autoFocus
-              />
-            ) : (
-              <button
-                onClick={() => {
-                  setEditValue(value.toString());
-                  setIsEditing(true);
-                }}
-                className="px-1 transition-[filter] hover:text-brand"
-              >
-                {isPercent ? value : value.toFixed(2)}
-              </button>
-            )}
+            <input
+              type="number"
+              inputMode="decimal"
+              step={isPercent ? '1' : '0.01'}
+              value={editValue}
+              onChange={(e) => setEditValue(e.target.value)}
+              onFocus={(e) => e.currentTarget.select()}
+              onBlur={handleBlur}
+              onKeyDown={(e) => e.key === 'Enter' && e.currentTarget.blur()}
+              className="w-16 border border-transparent bg-sand-2 px-2 py-1 text-right text-ink outline-none"
+            />
             {isPercent && <span className="text-ink-faint">%</span>}
           </div>
 

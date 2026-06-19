@@ -30,68 +30,33 @@ export const ReceiptCard: React.FC<ReceiptCardProps> = ({ receipt, canRemove }) 
   const { setReceiptMerchant, setReceiptDate, setTax, setTaxIsPercent, setTip, setTipIsPercent, removeReceipt } =
     useBillStore();
 
-  const [isEditingMerchant, setIsEditingMerchant] = useState(false);
-  const [isEditingDate, setIsEditingDate] = useState(false);
   const [merchantValue, setMerchantValue] = useState(receipt.merchant);
   const [dateValue, setDateValue] = useState(receipt.date);
 
   const total = deriveBillTotals([receipt]).total;
-
-  const handleMerchantBlur = () => {
-    setIsEditingMerchant(false);
-    setReceiptMerchant(receipt.id, merchantValue.trim());
-  };
-
-  const handleDateBlur = () => {
-    setIsEditingDate(false);
-    setReceiptDate(receipt.id, dateValue.trim());
-  };
 
   return (
     <div className="border border-ink bg-paper-raised">
       {/* Header band */}
       <div className="flex items-start justify-between gap-3 border-b border-ink bg-sand-3 px-4 py-3">
         <div className="min-w-0 flex-1">
-          {isEditingMerchant ? (
-            <input
-              type="text"
-              value={merchantValue}
-              onChange={(e) => setMerchantValue(e.target.value)}
-              onBlur={handleMerchantBlur}
-              onKeyDown={(e) => e.key === 'Enter' && handleMerchantBlur()}
-              maxLength={MAX_NAME_LENGTH}
-              placeholder="e.g. Costco"
-              className="w-full border border-transparent bg-transparent text-base font-black tracking-tight text-ink outline-none placeholder:font-bold placeholder:text-ink-ghost"
-              autoFocus
-            />
-          ) : (
-            <button
-              onClick={() => {
-                setMerchantValue(receipt.merchant);
-                setIsEditingMerchant(true);
-              }}
-              className="block max-w-full truncate text-left text-base font-black tracking-tight text-ink transition-[filter] hover:text-brand"
-            >
-              {receipt.merchant || <span className="text-ink-ghost">Untitled receipt</span>}
-            </button>
-          )}
-
-          <div className="mt-1 font-mono text-[10px] tracking-[0.04em] text-ink-faint">
-            {isEditingDate ? (
-              <input
-                type="date"
-                value={dateValue}
-                onChange={(e) => setDateValue(e.target.value)}
-                onBlur={handleDateBlur}
-                className="border border-transparent bg-transparent text-ink-faint outline-none"
-                autoFocus
-              />
-            ) : (
-              <button onClick={() => { setDateValue(receipt.date); setIsEditingDate(true); }} className="uppercase transition-[filter] hover:text-ink">
-                {receipt.date || 'Add date'}
-              </button>
-            )}
-          </div>
+          <input
+            type="text"
+            value={merchantValue}
+            onChange={(e) => setMerchantValue(e.target.value)}
+            onBlur={() => setReceiptMerchant(receipt.id, merchantValue.trim())}
+            onKeyDown={(e) => e.key === 'Enter' && e.currentTarget.blur()}
+            maxLength={MAX_NAME_LENGTH}
+            placeholder="e.g. Costco"
+            className="-ml-px w-full border border-transparent bg-transparent text-base font-black tracking-tight text-ink outline-none placeholder:font-bold placeholder:text-ink-ghost"
+          />
+          <input
+            type="date"
+            value={dateValue}
+            onChange={(e) => setDateValue(e.target.value)}
+            onBlur={() => setReceiptDate(receipt.id, dateValue.trim())}
+            className="-ml-px mt-0.5 block border border-transparent bg-transparent font-mono text-[10px] tracking-[0.04em] text-ink-faint outline-none"
+          />
         </div>
 
         <div className="flex shrink-0 items-center gap-3 pt-0.5">
