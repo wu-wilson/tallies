@@ -1,4 +1,5 @@
 import React, { useRef, useState } from 'react';
+import { flushSync } from 'react-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 
 import { DURATION, EASE } from '../../constants/animations';
@@ -17,8 +18,10 @@ export const PeopleBar: React.FC = () => {
   const inputRef = useRef<HTMLInputElement>(null);
 
   const handleAdd = () => {
-    setIsAdding(true);
-    setTimeout(() => inputRef.current?.focus(), 50);
+    // Render the input synchronously, then focus it within the same tap — mobile Safari/Chrome only raise the
+    // keyboard when focus() happens inside the user gesture (a deferred focus is ignored there).
+    flushSync(() => setIsAdding(true));
+    inputRef.current?.focus();
   };
 
   const handleSubmit = () => {
