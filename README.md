@@ -89,7 +89,7 @@ Deployed on [Railway](https://railway.app) as three services: the client ships a
 
 Every variable ships with a working default except `ANTHROPIC_API_KEY`, which is required for receipt scanning (OCR). `./launch.sh` runs on a fresh clone with no env files — override the rest only to change a default.
 
-- **Local dev** — create `client/.env` or `server/.env` (both gitignored).
+- **Local dev** — create `client/.env`, `server/.env`, or `cron/.env` (all gitignored).
 - **Production (Railway)** — variables are set in each service's **Variables** tab.
 
 #### Client (`client/`)
