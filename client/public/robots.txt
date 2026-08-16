@@ -1,0 +1,4 @@
+User-agent: *
+Disallow: /b/
+
+Sitemap: https://tallies.dev/sitemap.xml

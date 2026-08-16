@@ -23,7 +23,7 @@ Tallies is a mobile-first web app for splitting bills with an editorial-brutalis
 - Single Zustand store drives the `landing → capture → verify → result → share` flow; it holds the bill as an optional `name`, `receipts[]`, a shared `people[]`, and the created `shareUrl`. Screen state for that flow lives in the store, not separate routes; `SharedView` is the only other route (`/b/:id`), with a catch-all falling through to the not-found screen.
 - Item assignment is editable inline (tap an assigned avatar to drop it) and via a modal assign sheet (Everyone / Clear / per-person), reused across viewports.
 - OCR via Claude Sonnet (`claude-sonnet-4-6`) with image input and Zod-validated JSON output.
-- Sharing: 8-char base62 short IDs via `crypto.randomBytes(8)`. 30-day TTL enforced by weekly cron + on-read expiry check.
+- Sharing: 8-char base62 short IDs via `crypto.randomBytes(8)`. 30-day TTL enforced by weekly cron + on-read expiry check. `/b/` is disallowed in `robots.txt` — shared bills carry names, amounts, and Venmo handles, and a search cache would outlive the TTL.
 - Graceful degradation: if Postgres isn't reachable, capture/verify/result still work — only sharing is disabled.
 
 ## Do NOT
