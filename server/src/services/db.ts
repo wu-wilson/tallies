@@ -2,6 +2,8 @@ import { Pool, QueryResult } from 'pg';
 
 import { config } from '../config';
 
+import { describeError } from '../lib/describeError';
+
 let pool: Pool | null = null;
 let isConnected = false;
 
@@ -27,8 +29,7 @@ export async function initDb(): Promise<void> {
     isConnected = true;
     console.log('Connected to Postgres');
   } catch (err) {
-    const message = err instanceof Error ? err.message : String(err);
-    console.warn(`Postgres not reachable — share endpoints will return 503: ${message}`);
+    console.warn(`Postgres not reachable — share endpoints will return 503: ${describeError(err)}`);
   }
 }
 

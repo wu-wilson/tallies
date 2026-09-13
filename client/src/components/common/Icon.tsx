@@ -1,7 +1,7 @@
 import React from 'react';
 
 interface IconProps {
-  name: 'plus' | 'cross' | 'check' | 'trash';
+  name: 'plus' | 'cross' | 'check' | 'trash' | 'arrow-left';
   /** Rendered width and height in px. Defaults to 13. */
   size?: number;
 }
@@ -27,6 +27,15 @@ const GLYPHS: Record<IconProps['name'], { strokeWidth: number; paths: React.Reac
     ),
   },
   check: { strokeWidth: 3, paths: <polyline points="20 6 9 17 4 12" /> },
+  'arrow-left': {
+    strokeWidth: 3,
+    paths: (
+      <>
+        <line x1="20" y1="12" x2="4" y2="12" />
+        <polyline points="11 5 4 12 11 19" />
+      </>
+    ),
+  },
   trash: {
     strokeWidth: 2,
     paths: (
@@ -41,8 +50,8 @@ const GLYPHS: Record<IconProps['name'], { strokeWidth: number; paths: React.Reac
 };
 
 /**
- * Stroked UI glyph used by add, remove, and check controls. Drawn as an SVG rather than a text character so it
- * centers in its box regardless of the label font's baseline; inherits `currentColor`.
+ * Stroked UI glyph for the app's small controls (add, remove, check, back). Drawn as an SVG rather than a text
+ * character so it centers in its box regardless of the label font's baseline; inherits `currentColor`.
  * @param props - Which glyph to draw and its pixel size
  * @returns Decorative inline SVG
  */

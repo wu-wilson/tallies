@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react';
 import { motion } from 'framer-motion';
 
+import { Icon } from '../common/Icon';
 import { Toast } from '../common/Toast';
 import { BillSummary } from './BillSummary';
 import { PersonCard } from './PersonCard';
@@ -75,9 +76,10 @@ export const ResultScreen: React.FC = () => {
     <div className="mx-auto min-h-dvh max-w-xl px-5 pt-[calc(28px+env(safe-area-inset-top))]">
       <button
         onClick={() => setScreen('verify')}
-        className="mb-5 font-mono text-sm font-bold text-ink-faint transition-[filter] hover:text-ink"
+        className="mb-5 inline-flex items-center gap-1.5 font-mono text-sm font-bold text-ink-faint transition-[filter] hover:text-ink"
       >
-        &larr; Back
+        <Icon name="arrow-left" size={12} />
+        Back
       </button>
 
       <motion.div

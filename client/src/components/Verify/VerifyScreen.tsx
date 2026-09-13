@@ -52,9 +52,10 @@ export const VerifyScreen: React.FC = () => {
     >
       <button
         onClick={() => setScreen('capture')}
-        className="mb-5 font-mono text-sm font-bold text-ink-faint transition-[filter] hover:text-ink"
+        className="mb-5 inline-flex items-center gap-1.5 font-mono text-sm font-bold text-ink-faint transition-[filter] hover:text-ink"
       >
-        &larr; Back
+        <Icon name="arrow-left" size={12} />
+        Back
       </button>
 
       {/* Bill title */}

@@ -6,7 +6,7 @@ import { Pool } from 'pg';
 /** Short operational description of a thrown value: the error code (or name) plus its message. */
 function describeError(err: unknown): string {
   if (!(err instanceof Error)) return String(err);
-  const code = (err as { code?: string }).code;
+  const code = 'code' in err && typeof err.code === 'string' ? err.code : undefined;
   return [code ?? err.name, err.message].filter(Boolean).join(': ');
 }
 

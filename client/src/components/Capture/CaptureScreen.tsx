@@ -45,10 +45,11 @@ export const CaptureScreen: React.FC = () => {
       <div className="mb-8 flex items-center justify-between">
         <button
           onClick={() => setScreen('landing')}
-          className="font-mono text-sm font-bold text-ink-faint transition-[filter] hover:text-ink"
+          className="inline-flex items-center gap-1.5 font-mono text-sm font-bold text-ink-faint transition-[filter] hover:text-ink"
           aria-label="Back to home"
         >
-          &larr; Back
+          <Icon name="arrow-left" size={12} />
+          Back
         </button>
         {!isEmpty && (
           <span className="font-mono text-[10px] font-bold tracking-[0.06em] text-ink-faint">

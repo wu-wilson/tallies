@@ -18,7 +18,7 @@ export function errorHandler(
   res: Response,
   _next: NextFunction,
 ): void {
-  console.error('Error:', err.stack ?? err.message);
+  console.error(err.stack ?? `${err.name}: ${err.message}`);
 
   const typed = err as Error & { status?: number; statusCode?: number; isPublic?: boolean };
   const status = typed.status || typed.statusCode || 500;

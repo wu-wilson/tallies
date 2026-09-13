@@ -7,6 +7,8 @@ import { errorHandler } from './middleware/errorHandler';
 import { ocrRouter } from './routes/ocr';
 import { billsRouter } from './routes/bills';
 
+import { describeError } from './lib/describeError';
+
 const app = express();
 
 // Resolves req.ip to the client behind Railway's proxy.
@@ -36,6 +38,6 @@ initDb()
     });
   })
   .catch((err: unknown) => {
-    console.error('Failed to start:', err instanceof Error ? err.message || err.name : String(err));
+    console.error('Failed to start:', describeError(err));
     process.exit(1);
   });
