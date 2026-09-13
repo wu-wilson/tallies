@@ -79,7 +79,7 @@ export const PersonCard: React.FC<PersonCardProps> = ({
             animate={{ height: 'auto', opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
             transition={{ duration: DURATION.normal, ease: EASE.out }}
-            className="overflow-hidden border-t border-ink"
+            className="divide-y divide-line overflow-hidden border-t border-ink"
           >
             {breakdown.groups.map((group) => (
               <PersonGroup key={group.receiptId} group={group} variant={variant} showMerchant={multiGroup} />
