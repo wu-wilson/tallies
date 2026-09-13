@@ -13,9 +13,9 @@ Tallies is a mobile-first web app for splitting bills with an editorial-brutalis
 ## Key Decisions
 
 - Mobile-first (portrait iPhone primary target), with responsive desktop layouts. Base body 14px; responsive type via Tailwind utilities.
-- Editorial-brutalist, light warm-paper aesthetic — palette defined via CSS custom properties on `:root`. No dark mode, no theme toggle. Flat planes, 1.5px solid-ink borders (the default `border` width/color), square corners, no shadows; sectioning via uppercase Space-Mono micro-labels and hairline rules.
+- Editorial-brutalist, light warm-paper aesthetic — palette defined via CSS custom properties on `:root`. No dark mode, no theme toggle. Flat planes, 1.5px solid-ink borders (the default `border` width/color), square corners, no shadows; sectioning via uppercase Roboto Mono micro-labels and hairline rules.
 - Forest green brand accent (`#2C5545`) on warm paper (`#F6F2E9`), with a rust accent (`#B0573A`); ink is `#1B1A17`. Brand green carries primary CTAs and active states; Venmo blue (`#008CFF`) is reserved for the pay handoff.
-- Fonts: Archivo (UI/body, 800–900 weights for display), Space Mono (numbers, currency, micro-labels).
+- Fonts: Archivo (UI/body, 800–900 weights for display), Roboto Mono (numbers, currency, micro-labels).
 - 8 person colors (sage, gold, plum, slate, rose, taupe, teal, clay) — warm-toned, functional, never used as UI accents.
 - A bill is one or more receipts (each with its own merchant, items, and tax/tip) plus a shared set of people; people are referenced by ID in each item's `assignees`, so they span all receipts.
 - Proportional tax/tip math, computed **per receipt**: each person's share of a receipt's tax/tip is proportional to their subtotal within that receipt, then summed across receipts. Full precision internally, round to cents only at display.

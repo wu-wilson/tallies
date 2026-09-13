@@ -48,7 +48,7 @@ export interface PersonBreakdown {
  * @param subtotal - Items subtotal in dollars; ignored when `isPercent` is false
  * @returns Dollar amount, unrounded — call sites round only at display time
  */
-export function resolveAmount(value: number, isPercent: boolean, subtotal: number): number {
+function resolveAmount(value: number, isPercent: boolean, subtotal: number): number {
   if (isPercent) {
     return (value / 100) * subtotal;
   }
@@ -64,7 +64,7 @@ export function resolveAmount(value: number, isPercent: boolean, subtotal: numbe
  * @param people - All people on the bill (shared across receipts)
  * @returns Per-person breakdowns sorted alphabetically by name; math is full-precision, rounding happens at display time only
  */
-export function computeBreakdowns(receipts: Receipt[], people: Person[]): PersonBreakdown[] {
+function computeBreakdowns(receipts: Receipt[], people: Person[]): PersonBreakdown[] {
   const personMap = new Map<string, Person>();
   for (const person of people) {
     personMap.set(person.id, person);

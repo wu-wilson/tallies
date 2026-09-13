@@ -33,7 +33,7 @@ export default {
       },
       fontFamily: {
         sans: ['"Archivo"', 'system-ui', 'sans-serif'],
-        mono: ['"Space Mono"', 'monospace'],
+        mono: ['"Roboto Mono"', 'monospace'],
       },
       borderWidth: {
         DEFAULT: '1.5px',

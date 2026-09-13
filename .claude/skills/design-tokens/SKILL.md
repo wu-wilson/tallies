@@ -59,7 +59,7 @@ Auto-assigned in `PERSON_COLORS` order from `client/src/constants/colors.ts`; wa
 
 - Display/headers: Archivo (`font-black tracking-tight`, weights 800–900)
 - Body/UI: Archivo (14px base on `body`)
-- Numbers/currency/micro-labels: Space Mono (`font-mono tabular-nums`); uppercase tracked labels at `text-[10px]`–`text-[11px]`
+- Numbers/currency/micro-labels: Roboto Mono (`font-mono tabular-nums`, slashed zero); uppercase tracked labels at `text-[10px]`–`text-[11px]`
 - The Venmo wordmark renders as italic system-font text (`VenmoWordmark`), kept off the Archivo face.
 
 ## Borders & Radii

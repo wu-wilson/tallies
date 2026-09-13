@@ -26,7 +26,7 @@ Editorial-brutalist, light warm-paper system. No UI component libraries — buil
 
 ## Sectioning
 
-- Section structure comes from uppercase Space-Mono micro-labels (`font-mono text-[10px]–text-[11px] font-bold tracking-[0.06em] text-ink-faint`) plus generous whitespace, and from `border`/`border-line` rules between bands.
+- Section structure comes from uppercase Roboto Mono micro-labels (`font-mono text-[10px]–text-[11px] font-bold tracking-[0.06em] text-ink-faint`) plus generous whitespace, and from `border`/`border-line` rules between bands.
 - Header bands inside cards use `bg-sand-3` with a `border-b` ink rule; per-person totals dash off with `border-t-2 border-dashed`.
 
 ## Interactive States
