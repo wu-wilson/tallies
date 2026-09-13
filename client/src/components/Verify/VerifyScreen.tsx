@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 
+import { Icon } from '../common/Icon';
 import { Toast } from '../common/Toast';
 import { PeopleBar } from './PeopleBar';
 import { PrimaryCta } from './PrimaryCta';
@@ -87,10 +88,10 @@ export const VerifyScreen: React.FC = () => {
           <motion.button
             onClick={addReceipt}
             disabled={atReceiptCap}
-            className="flex w-full items-center justify-center gap-2 border-2 border-dashed border-ink-faint bg-paper-raised px-4 py-3 text-sm font-bold text-ink-faint transition-[filter] hover:text-ink disabled:cursor-not-allowed disabled:opacity-40"
+            className="flex w-full items-center justify-center gap-2 border border-line bg-paper-raised px-4 py-3 text-sm font-bold text-ink transition-colors hover:bg-sand-2 disabled:cursor-not-allowed disabled:opacity-40"
             whileTap={atReceiptCap ? undefined : { scale: 0.99 }}
           >
-            <span className="text-base leading-none">+</span>
+            <Icon name="plus" />
             Add receipt
           </motion.button>
         </div>

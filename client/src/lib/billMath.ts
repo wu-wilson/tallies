@@ -163,7 +163,7 @@ export function formatCurrency(amount: number): string {
  * @param isPercent - Whether `value` is already a percentage
  * @param subtotal - Items subtotal used to convert a dollar amount back into a percent
  * @param dollarAmount - Already-resolved dollar amount, used when `isPercent` is false
- * @returns String like `"20%"`; returns `"0%"` when `subtotal` is zero and `isPercent` is false
+ * @returns The percent as entered (`"20%"`) when `isPercent`, otherwise derived to one decimal (`"7.5%"`); `"0%"` when `subtotal` is zero
  */
 export function formatPercentage(
   value: number,

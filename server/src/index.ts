@@ -1,6 +1,3 @@
-import dotenv from 'dotenv';
-dotenv.config();
-
 import express from 'express';
 
 import { config } from './config';
@@ -32,8 +29,13 @@ app.use('/api', billsRouter);
 app.use(errorHandler);
 
 // Start (after the DB connection probe)
-initDb().then(() => {
-  app.listen(config.port, () => {
-    console.log(`Tallies API running on port ${config.port}`);
+initDb()
+  .then(() => {
+    app.listen(config.port, () => {
+      console.log(`Tallies API running on port ${config.port}`);
+    });
+  })
+  .catch((err: unknown) => {
+    console.error('Failed to start:', err instanceof Error ? err.message || err.name : String(err));
+    process.exit(1);
   });
-});

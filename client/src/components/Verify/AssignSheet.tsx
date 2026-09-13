@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 
 import { Avatar } from '../common/Avatar';
+import { Icon } from '../common/Icon';
 
 import { useBillStore } from '../../store/billStore';
 
@@ -60,18 +61,20 @@ export const AssignSheet: React.FC<AssignSheetProps> = ({ receiptId, item, onClo
             </div>
 
             <div className="flex gap-2.5 px-5 pb-1.5 pt-4">
-              <button
+              <motion.button
                 onClick={() => assignAllToItem(receiptId, item.id)}
                 className="border border-ink bg-brand px-4 py-2 text-[13px] font-extrabold text-brand-on transition-[filter] hover:brightness-110"
+                whileTap={{ scale: 0.97 }}
               >
                 Everyone
-              </button>
-              <button
+              </motion.button>
+              <motion.button
                 onClick={() => clearItemAssignees(receiptId, item.id)}
                 className="border border-ink bg-paper-raised px-4 py-2 text-[13px] font-extrabold transition-[filter] hover:brightness-[0.97]"
+                whileTap={{ scale: 0.97 }}
               >
                 Clear
-              </button>
+              </motion.button>
             </div>
 
             <div>
@@ -86,11 +89,11 @@ export const AssignSheet: React.FC<AssignSheetProps> = ({ receiptId, item, onClo
                     <Avatar name={person.name} color={person.color} size="md" />
                     <span className="flex-1 truncate text-[15px] font-bold">{person.name}</span>
                     <span
-                      className={`flex h-6 w-6 shrink-0 items-center justify-center border border-ink text-sm font-extrabold ${
+                      className={`flex h-6 w-6 shrink-0 items-center justify-center border border-ink ${
                         checked ? 'bg-brand text-brand-on' : 'bg-paper-raised text-transparent'
                       }`}
                     >
-                      ✓
+                      <Icon name="check" size={14} />
                     </span>
                   </button>
                 );
@@ -98,12 +101,13 @@ export const AssignSheet: React.FC<AssignSheetProps> = ({ receiptId, item, onClo
             </div>
 
             <div className="px-5 pb-[calc(20px+env(safe-area-inset-bottom))] pt-4">
-              <button
+              <motion.button
                 onClick={onClose}
                 className="w-full bg-brand py-4 text-[15px] font-extrabold text-brand-on transition-[filter] hover:brightness-110"
+                whileTap={{ scale: 0.99 }}
               >
                 Done
-              </button>
+              </motion.button>
             </div>
           </motion.div>
         </div>

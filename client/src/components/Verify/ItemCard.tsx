@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 
 import { Avatar } from '../common/Avatar';
+import { Icon } from '../common/Icon';
 import { AssignSheet } from './AssignSheet';
 
 import { useBillStore } from '../../store/billStore';
@@ -21,7 +22,7 @@ interface ItemCardProps {
 
 /**
  * Single bill-item row — editable name/price boxes, a remove control, and an assignee row whose avatars
- * toggle a person off on tap; a dashed "+" opens the assign sheet for adding people or splitting evenly.
+ * toggle a person off on tap; a "+" control (labelled "Assign" while nobody is on it) opens the assign sheet.
  * @param props - Receipt ID, the item, and its list index for stagger timing
  * @returns Item row with editable fields and assignment controls
  */
@@ -31,6 +32,7 @@ export const ItemCard: React.FC<ItemCardProps> = ({ receiptId, item, index }) =>
   const [priceValue, setPriceValue] = useState(item.price.toString());
   const [sheetOpen, setSheetOpen] = useState(false);
 
+  const hasPeople = people.length > 0;
   const assigned = people.filter((p) => item.assignees.includes(p.id));
   const isUnassigned = assigned.length === 0;
 
@@ -75,14 +77,9 @@ export const ItemCard: React.FC<ItemCardProps> = ({ receiptId, item, index }) =>
         <button
           onClick={() => removeItem(receiptId, item.id)}
           aria-label="Remove item"
-          className="flex h-[38px] w-[38px] shrink-0 items-center justify-center border border-ink text-ink-faint transition-[filter] hover:text-status-error"
+          className="-mr-[11px] flex h-[38px] w-[38px] shrink-0 items-center justify-center text-ink-faint transition-[filter] hover:text-status-error"
         >
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <polyline points="3 6 5 6 21 6" />
-            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-            <line x1="10" y1="11" x2="10" y2="17" />
-            <line x1="14" y1="11" x2="14" y2="17" />
-          </svg>
+          <Icon name="trash" size={16} />
         </button>
       </div>
 
@@ -92,21 +89,22 @@ export const ItemCard: React.FC<ItemCardProps> = ({ receiptId, item, index }) =>
             key={person.id}
             name={person.name}
             color={person.color}
-            size="xs"
+            size="sm"
             onClick={() => toggleAssignment(receiptId, item.id, person.id)}
           />
         ))}
-        <button
+        <motion.button
           onClick={() => setSheetOpen(true)}
-          disabled={people.length === 0}
-          className={`flex h-[22px] shrink-0 items-center justify-center rounded-full border border-dashed border-ink-faint font-mono text-[11px] font-bold text-ink-faint transition-[filter] hover:text-ink disabled:opacity-40 ${
-            isUnassigned ? 'gap-1 px-2.5' : 'w-[22px]'
+          disabled={!hasPeople}
+          className={`flex shrink-0 items-center justify-center border border-line bg-paper-raised text-ink-muted transition-colors hover:bg-sand-2 hover:text-ink disabled:cursor-not-allowed disabled:opacity-40 ${
+            isUnassigned ? 'h-[26px] gap-1.5 px-3 text-xs font-extrabold' : 'h-[26px] w-[26px]'
           }`}
           aria-label="Assign people"
+          whileTap={hasPeople ? { scale: 0.97 } : undefined}
         >
-          <span className="text-[13px] leading-none">+</span>
-          {isUnassigned && <span className="text-rust">UNASSIGNED</span>}
-        </button>
+          <Icon name="plus" />
+          {isUnassigned && <span>Assign</span>}
+        </motion.button>
       </div>
 
       <AssignSheet receiptId={receiptId} item={sheetOpen ? item : null} onClose={() => setSheetOpen(false)} />

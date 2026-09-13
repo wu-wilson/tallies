@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { AnimatePresence } from 'framer-motion';
 
+import { Icon } from '../common/Icon';
 import { AddItemButton } from './AddItemButton';
 import { ItemCard } from './ItemCard';
 import { SplitEvenlyButton } from './SplitEvenlyButton';
@@ -21,8 +22,8 @@ interface ReceiptCardProps {
 }
 
 /**
- * One receipt's editing card on Verify — a header band with editable merchant/date and running total, its
- * own item list, a split-evenly toggle, and its own tax/tip rows.
+ * One receipt's editing card on Verify — a header band with editable merchant/date and running total, a
+ * receipt-scoped split-evenly row, its own item list with an add-item bar, and its own tax/tip rows.
  * @param props - The receipt to render and whether it may be removed
  * @returns Bordered card containing the receipt's header, items, and tax/tip controls
  */
@@ -65,18 +66,16 @@ export const ReceiptCard: React.FC<ReceiptCardProps> = ({ receipt, canRemove }) 
             <button
               onClick={() => removeReceipt(receipt.id)}
               aria-label="Remove receipt"
-              className="flex h-[38px] w-[38px] shrink-0 items-center justify-center border border-ink text-ink-faint transition-[filter] hover:text-status-error"
+              className="-mr-[11px] flex h-[38px] w-[38px] shrink-0 items-center justify-center text-ink-faint transition-[filter] hover:text-status-error"
             >
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <polyline points="3 6 5 6 21 6" />
-                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-                <line x1="10" y1="11" x2="10" y2="17" />
-                <line x1="14" y1="11" x2="14" y2="17" />
-              </svg>
+              <Icon name="trash" size={16} />
             </button>
           )}
         </div>
       </div>
+
+      {/* Split evenly */}
+      <SplitEvenlyButton receiptId={receipt.id} />
 
       {/* Items */}
       <AnimatePresence initial={false}>
@@ -85,11 +84,7 @@ export const ReceiptCard: React.FC<ReceiptCardProps> = ({ receipt, canRemove }) 
         ))}
       </AnimatePresence>
 
-      {/* Add item + split evenly */}
-      <div className="flex items-center justify-between gap-3 border-b border-line px-3.5 py-3 sm:px-4">
-        <AddItemButton receiptId={receipt.id} disabled={receipt.items.length >= MAX_ITEMS} />
-        <SplitEvenlyButton receiptId={receipt.id} />
-      </div>
+      <AddItemButton receiptId={receipt.id} disabled={receipt.items.length >= MAX_ITEMS} />
 
       {/* Tax / Tip */}
       <div className="divide-y divide-line">

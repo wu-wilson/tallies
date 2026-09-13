@@ -9,14 +9,14 @@ import type { Screen, Person, BillItem, Receipt } from '../types/bill';
 interface OcrResult {
   merchant?: string | null;
   date?: string | null;
-  items: { name: string; price: number; quantity: number }[];
+  items: { name: string; price: number }[];
   tax?: number | null;
   tip?: number | null;
 }
 
 interface BillState {
   screen: Screen;
-  /** Optional bill title. Empty by default — unnamed bills show "Untitled bill" on Verify and fall back to "Your bill" on the breakdown (see `deriveBillName`). */
+  /** Optional bill title. Empty by default — unnamed bills fall back to "Your bill" on the breakdown (see `deriveBillName`). */
   name: string;
   receipts: Receipt[];
   people: Person[];
@@ -28,6 +28,8 @@ interface BillState {
 
 interface BillActions {
   setScreen: (screen: Screen) => void;
+  /** Discard any previous bill (including its share link) and open Capture for a fresh one. */
+  startNewBill: () => void;
   loadOcrResults: (results: OcrResult[]) => void;
   setScanNotice: (notice: string | null) => void;
   setShareUrl: (url: string | null) => void;
@@ -147,6 +149,8 @@ export const useBillStore = create<BillState & BillActions>()((set, get) => ({
 
   setScreen: (screen) => set({ screen }),
 
+  startNewBill: () => set({ ...initialState, screen: 'capture' }),
+
   loadOcrResults: (results) => {
     // Enforce the receipt cap here too, so the store never holds more than a shareable bill allows
     // regardless of how many images were scanned.
@@ -154,6 +158,7 @@ export const useBillStore = create<BillState & BillActions>()((set, get) => ({
       name: '',
       receipts: results.slice(0, MAX_RECEIPTS).map(receiptFromOcr),
       people: [],
+      shareUrl: null,
       screen: 'verify',
     });
   },

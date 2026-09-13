@@ -2,13 +2,17 @@ import React, { useRef, useState } from 'react';
 import { flushSync } from 'react-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 
-import { DURATION, EASE } from '../../constants/animations';
-import { MAX_PEOPLE, MAX_NAME_LENGTH } from '../../constants/config';
-import { useBillStore } from '../../store/billStore';
 import { Avatar } from '../common/Avatar';
+import { Icon } from '../common/Icon';
+
+import { useBillStore } from '../../store/billStore';
+
+import { DURATION, EASE } from '../../constants/animations';
+import { MAX_NAME_LENGTH, MAX_PEOPLE } from '../../constants/config';
 
 /**
- * Wrapped row of people on the bill, each a bordered pill, with an inline autofocus input for adding more.
+ * Wrapped row of people on the bill, each a bordered pill, plus an add button that swaps for an inline
+ * autofocus input of the same size.
  * @returns The "PEOPLE" section — person pills plus the add control
  */
 export const PeopleBar: React.FC = () => {
@@ -66,10 +70,10 @@ export const PeopleBar: React.FC = () => {
               <span className="truncate text-sm font-bold text-ink">{person.name}</span>
               <button
                 onClick={() => removePerson(person.id)}
-                className="shrink-0 text-base font-bold leading-none text-ink-faint transition-[filter] hover:text-status-error"
+                className="flex h-5 w-5 shrink-0 items-center justify-center text-ink-faint transition-[filter] hover:text-status-error"
                 aria-label={`Remove ${person.name}`}
               >
-                ×
+                <Icon name="cross" size={12} />
               </button>
             </motion.div>
           ))}
@@ -86,17 +90,17 @@ export const PeopleBar: React.FC = () => {
               onKeyDown={handleKeyDown}
               placeholder="e.g. Alex"
               maxLength={MAX_NAME_LENGTH}
-              className="w-32 border-2 border-ink bg-paper-raised px-3 py-2 text-sm font-bold text-ink outline-none placeholder:font-normal placeholder:text-ink-ghost"
+              className="w-32 border border-ink bg-paper-raised px-3 py-2 text-sm font-bold text-ink outline-none placeholder:font-normal placeholder:text-ink-ghost"
               autoCapitalize="words"
             />
           </motion.div>
         ) : people.length < MAX_PEOPLE ? (
           <motion.button
             onClick={handleAdd}
-            className="flex w-32 shrink-0 items-center gap-1.5 border-2 border-dashed border-ink-faint px-3 py-2 text-sm font-bold text-ink-faint transition-[filter] hover:text-ink"
-            whileTap={{ scale: 0.95 }}
+            className="flex w-32 shrink-0 items-center gap-1.5 border border-line bg-paper-raised px-3 py-2 text-sm font-bold text-ink transition-colors hover:bg-sand-2"
+            whileTap={{ scale: 0.97 }}
           >
-            <span className="text-base leading-none">+</span>
+            <Icon name="plus" />
             Add person
           </motion.button>
         ) : null}

@@ -1,17 +1,19 @@
-/** Bill sharing routes: POST /api/bills (create) and GET /api/bills/:id (read). */
 import { Router } from 'express';
 
-import { writeLimiter, readLimiter } from '../middleware/rateLimiter';
+import { readLimiter, writeLimiter } from '../middleware/rateLimiter';
 import { BillPayloadSchema } from '../schemas/billPayload';
-import { saveBill, getBill } from '../services/shortLinks';
+import { getBill, saveBill } from '../services/shortLinks';
 
-const router = Router();
+import { formatIssues } from '../lib/formatIssues';
 
-router.post('/bills', writeLimiter, async (req, res, next) => {
+/** Bill sharing routes: `POST /api/bills` stores a validated bill and returns its share ID; `GET /api/bills/:id` reads one (404 when missing or expired). */
+export const billsRouter = Router();
+
+billsRouter.post('/bills', writeLimiter, async (req, res, next) => {
   try {
     const validated = BillPayloadSchema.safeParse(req.body);
     if (!validated.success) {
-      console.error(`Invalid bill payload: ${JSON.stringify(validated.error.issues)}`);
+      console.error(`Invalid bill payload: ${formatIssues(validated.error.issues)}`);
       res.status(400).json({ error: 'Invalid bill data' });
       return;
     }
@@ -26,7 +28,7 @@ router.post('/bills', writeLimiter, async (req, res, next) => {
 
 const ID_PATTERN = /^[a-zA-Z0-9]{8}$/;
 
-router.get('/bills/:id', readLimiter, async (req, res, next) => {
+billsRouter.get('/bills/:id', readLimiter, async (req, res, next) => {
   try {
     const { id } = req.params;
 
@@ -48,5 +50,3 @@ router.get('/bills/:id', readLimiter, async (req, res, next) => {
     next(err);
   }
 });
-
-export { router as billsRouter };

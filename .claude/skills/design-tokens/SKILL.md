@@ -13,7 +13,6 @@ Editorial-brutalist, light warm-paper system. Source of truth: `client/src/index
 **Surfaces (warm paper, lightest to deepest)**
 - `--paper`: `#F6F2E9` (body background, `bg-paper`)
 - `--paper-raised`: `#FBF9F3` (cards, `bg-paper-raised`)
-- `--sand`: `#E4E0D4` (`bg-sand`)
 - `--sand-2`: `#EDE8DB` (input/field fills, `bg-sand-2`)
 - `--sand-3`: `#E3DCC9` (header bands, `bg-sand-3`)
 
@@ -26,7 +25,7 @@ Editorial-brutalist, light warm-paper system. Source of truth: `client/src/index
 
 **Hairlines**
 - `--line`: `#ded8c8` (inner dividers, `border-line`)
-- `--line-grid`: `#f0ebdc` (grid-paper backdrop, `border-line-grid`)
+- `--line-grid`: `#f0ebdc` (grid-paper backdrop; read as `var(--line-grid)` in `MarketingScreen`, not exposed as a Tailwind color)
 
 **Scrim**
 - `--scrim`: `rgba(27,26,23,0.5)` (modal backdrop, `bg-scrim`). Pre-baked alpha — Tailwind `/opacity` modifiers don't work on the hex-valued tokens, so use this for the dim rather than `bg-ink/50`.
@@ -37,7 +36,7 @@ Editorial-brutalist, light warm-paper system. Source of truth: `client/src/index
 - `--venmo`: `#008CFF` (`bg-venmo` / `text-venmo` — pay handoff only)
 
 **Status**
-- `--success`: `#2C5545` · `--warning`: `#B0573A` · `--error`: `#9B2C2C` (`text-status-*`)
+- `--error`: `#9B2C2C` (`text-status-error`); success and warning states reuse `text-brand` and `text-rust`
 
 ## Person Colors (8, functional)
 
@@ -67,7 +66,7 @@ Auto-assigned in `PERSON_COLORS` order from `client/src/constants/colors.ts`; wa
 
 - Default `border` is **1.5px solid ink** (set via `borderWidth.DEFAULT` + `borderColor.DEFAULT`). Inner dividers use `border-line`.
 - Cards, buttons, fields, and badges are **square** (no radius). Avatars and small dots are `rounded-full`.
-- Add/empty states use `border-2 border-dashed` (ink, ink-faint, or brand).
+- Add controls and the capture drop target use a hairline frame (`border border-line`) on `bg-paper-raised`; no dashed borders on controls.
 - Depth comes from border + surface-tier shifts (`bg-paper` vs `bg-paper-raised` vs `bg-sand-*`); **no shadows**.
 
 ## Animation Durations (`constants/animations.ts`)

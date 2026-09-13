@@ -31,7 +31,7 @@ export const VenmoButton: React.FC<VenmoButtonProps> = ({ username, amount, memo
       rel="noopener noreferrer"
       aria-label={`Pay ${formatCurrency(amount)} via Venmo`}
       className="flex w-full items-center justify-center gap-2 bg-venmo px-4 py-3.5 transition-[filter] hover:brightness-110"
-      whileTap={{ scale: 0.98 }}
+      whileTap={{ scale: 0.99 }}
     >
       <span className="text-[15px] font-extrabold text-white">Pay {formatCurrency(amount)}</span>
       <span className="text-white/60">·</span>

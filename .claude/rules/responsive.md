@@ -19,7 +19,7 @@ Mobile-first. Use Tailwind defaults: `sm` (640px), `md` (768px), `lg` (1024px). 
 ## Touch Targets
 
 - In-flow primary CTAs are full-width brand bars at `py-4` (~52px tall); secondary/inline controls at `py-2`–`py-3.5`. Hit area comes from full width plus generous vertical padding.
-- Avatars (`Avatar.tsx`): xs=22px, sm=26px, md=34px, lg=40px.
+- Avatars (`Avatar.tsx`): sm=26px (item assignee rows), md=34px (people rows).
 
 ## Viewport
 

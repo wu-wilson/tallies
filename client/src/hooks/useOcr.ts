@@ -10,7 +10,7 @@ import { API_URL, MAX_RECEIPTS } from '../constants/config';
 interface OcrResult {
   merchant?: string | null;
   date?: string | null;
-  items: { name: string; price: number; quantity: number }[];
+  items: { name: string; price: number }[];
   tax?: number | null;
   tip?: number | null;
 }
@@ -23,6 +23,8 @@ export interface ScanEntry {
   /** Object URL for the picked image; revoked when the entry is removed or the hook unmounts. */
   previewUrl: string;
   status: 'scanning' | 'done' | 'failed';
+  /** User-safe reason for a failed scan (server message or a local fallback). */
+  error?: string;
   /** Merchant parsed from a successful scan, when present. */
   merchant?: string;
   /** Item count from a successful scan. */
@@ -98,8 +100,11 @@ export function useOcr() {
             subtotal,
             result,
           });
-        } catch {
-          updateEntry(entry.id, { status: 'failed' });
+        } catch (err) {
+          updateEntry(entry.id, {
+            status: 'failed',
+            error: err instanceof Error ? err.message : "Couldn't scan",
+          });
         }
       }
 

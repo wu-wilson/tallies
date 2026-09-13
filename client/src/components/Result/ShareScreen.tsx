@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo } from 'react';
 import { motion } from 'framer-motion';
 
+import { Icon } from '../common/Icon';
 import { Toast } from '../common/Toast';
 import { VenmoWordmark } from './VenmoWordmark';
 
@@ -64,8 +65,8 @@ export const ShareScreen: React.FC = () => {
         transition={{ duration: DURATION.smooth, ease: EASE.out }}
         className="flex items-center gap-4"
       >
-        <span className="flex h-[52px] w-[52px] shrink-0 items-center justify-center bg-brand text-2xl font-extrabold text-brand-on">
-          ✓
+        <span className="flex h-[52px] w-[52px] shrink-0 items-center justify-center bg-brand text-brand-on">
+          <Icon name="check" size={26} />
         </span>
         <div>
           <h1 className="text-2xl font-black tracking-tight">Your split is ready</h1>
@@ -85,17 +86,19 @@ export const ShareScreen: React.FC = () => {
       <p className="mt-8 font-mono text-[11px] font-bold tracking-[0.06em] text-ink-faint">YOUR SHAREABLE LINK</p>
       <div className="mt-2.5 flex border border-ink">
         <div className="flex-1 truncate bg-paper-raised px-4 py-3.5 font-mono text-[13px]">{shareUrl}</div>
-        <button
+        <motion.button
           onClick={handleCopy}
           className="border-l border-ink bg-paper px-6 text-sm font-extrabold transition-[filter] hover:brightness-[0.97]"
+          whileTap={{ scale: 0.97 }}
         >
           Copy
-        </button>
+        </motion.button>
       </div>
 
-      <button
+      <motion.button
         onClick={handleShare}
         className="mt-3 flex w-full items-center justify-center gap-2 bg-brand px-4 py-4 text-[15px] font-extrabold text-brand-on transition-[filter] hover:brightness-110"
+        whileTap={{ scale: 0.99 }}
       >
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0">
           <circle cx="18" cy="5" r="3" />
@@ -105,7 +108,7 @@ export const ShareScreen: React.FC = () => {
           <line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
         </svg>
         {hasNativeShare ? 'Share…' : 'Copy & share'}
-      </button>
+      </motion.button>
 
       <p className="mt-6 font-mono text-[11px] leading-relaxed text-ink-faint">
         Anyone with the link sees their share{hasVenmo ? ' and pays you on Venmo' : ''} — no account needed. Shared bills

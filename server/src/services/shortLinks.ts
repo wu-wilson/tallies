@@ -6,19 +6,14 @@ import type { BillPayload } from '../schemas/billPayload';
 
 const BASE62 = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
 
-/** Generates a fresh 8-char base62 (`0-9A-Za-z`) share ID from cryptographically random bytes (~218 trillion combinations). */
+/** Generates a fresh 8-char base62 (`0-9A-Za-z`) share ID, each character drawn uniformly at random (~218 trillion combinations). */
 function generateId(): string {
-  const bytes = crypto.randomBytes(8);
-  let result = '';
-  for (const byte of bytes) {
-    result += BASE62[byte % 62];
-  }
-  return result;
+  return Array.from({ length: 8 }, () => BASE62[crypto.randomInt(BASE62.length)]).join('');
 }
 
 /**
  * Persist a validated bill and return its share ID.
- * Rejects with `status: 503` (`isPublic`) when the DB is unavailable, a generic `'Failed to generate unique bill ID'` after three consecutive `23505` collisions, or any non-collision pg error unchanged.
+ * Rejects with `status: 503` (`isPublic`) when the DB is unavailable, a generic `'Failed to generate unique bill ID'` after three consecutive `23505` collisions, or any other pg error unchanged.
  * @param data - Zod-validated bill payload
  * @returns 8-char base62 ID under which the bill is stored
  */
@@ -37,10 +32,7 @@ export async function saveBill(data: BillPayload): Promise<string> {
       return id;
     } catch (err) {
       const pgErr = err as Error & { code?: string };
-      if (pgErr.code === '23505' && attempt < 2) {
-        continue;
-      }
-      throw err;
+      if (pgErr.code !== '23505') throw err;
     }
   }
 

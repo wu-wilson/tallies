@@ -1,7 +1,7 @@
 import dotenv from 'dotenv';
 dotenv.config();
 
-/** Typed, frozen configuration loaded from environment variables at startup. */
+/** Typed configuration read from environment variables at startup, with local-dev defaults. */
 export const config = {
   port: parseInt(process.env.PORT || '3001', 10),
   anthropicApiKey: process.env.ANTHROPIC_API_KEY || '',

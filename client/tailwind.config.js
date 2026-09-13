@@ -9,7 +9,6 @@ export default {
           raised: 'var(--paper-raised)',
         },
         sand: {
-          DEFAULT: 'var(--sand)',
           2: 'var(--sand-2)',
           3: 'var(--sand-3)',
         },
@@ -20,10 +19,7 @@ export default {
           faint: 'var(--ink-faint)',
           ghost: 'var(--ink-ghost)',
         },
-        line: {
-          DEFAULT: 'var(--line)',
-          grid: 'var(--line-grid)',
-        },
+        line: 'var(--line)',
         scrim: 'var(--scrim)',
         brand: {
           DEFAULT: 'var(--brand)',
@@ -32,8 +28,6 @@ export default {
         rust: 'var(--rust)',
         venmo: 'var(--venmo)',
         status: {
-          success: 'var(--success)',
-          warning: 'var(--warning)',
           error: 'var(--error)',
         },
       },

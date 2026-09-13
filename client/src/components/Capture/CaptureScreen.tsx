@@ -1,17 +1,14 @@
 import React, { useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
+import { Icon } from '../common/Icon';
 import { TallyLogo } from '../common/TallyLogo';
+import { ScanRow } from './ScanRow';
 
 import { useOcr } from '../../hooks/useOcr';
 import { useBillStore } from '../../store/billStore';
 
-import { formatCurrency } from '../../lib/billMath';
-
-import { DURATION, EASE } from '../../constants/animations';
 import { MAX_RECEIPTS } from '../../constants/config';
-
-import type { ScanEntry } from '../../hooks/useOcr';
 
 /**
  * Capture screen — picks receipt images and scans them inline, showing each as a row with live status.
@@ -74,14 +71,17 @@ export const CaptureScreen: React.FC = () => {
           </div>
           <p className="mt-3 font-mono text-xs text-ink-faint">Keep tallies on every tab.</p>
 
-          <button
+          <motion.button
             onClick={() => fileInputRef.current?.click()}
-            className="mt-8 flex w-full max-w-sm items-center justify-center gap-3 border-2 border-dashed border-ink bg-paper-raised px-5 py-6 transition-[filter] hover:brightness-[0.98]"
+            className="mt-8 flex w-full max-w-sm items-center justify-center gap-3 border border-line bg-paper-raised px-5 py-6 transition-colors hover:bg-sand-2"
+            whileTap={{ scale: 0.99 }}
           >
-            <span className="flex h-9 w-9 items-center justify-center bg-brand text-xl font-extrabold text-brand-on">+</span>
+            <span className="flex h-9 w-9 items-center justify-center bg-brand text-brand-on">
+              <Icon name="plus" size={18} />
+            </span>
             <span className="text-[15px] font-extrabold">Add receipts</span>
             <span className="font-mono text-[11px] text-ink-ghost">UP TO {MAX_RECEIPTS}</span>
-          </button>
+          </motion.button>
 
           <button
             onClick={handleManualEntry}
@@ -102,14 +102,15 @@ export const CaptureScreen: React.FC = () => {
               ))}
             </AnimatePresence>
 
-            <button
+            <motion.button
               onClick={() => fileInputRef.current?.click()}
               disabled={atCap}
-              className="flex items-center justify-center gap-2 border-2 border-dashed border-ink-faint bg-paper-raised px-4 py-3 text-sm font-bold text-ink-faint transition-[filter] hover:text-ink disabled:cursor-not-allowed disabled:opacity-40"
+              className="flex items-center justify-center gap-2 border border-line bg-paper-raised px-4 py-3 text-sm font-bold text-ink transition-colors hover:bg-sand-2 disabled:cursor-not-allowed disabled:opacity-40"
+              whileTap={atCap ? undefined : { scale: 0.99 }}
             >
-              <span className="text-base leading-none">+</span>
+              <Icon name="plus" />
               Add more · {entries.length}/{MAX_RECEIPTS}
-            </button>
+            </motion.button>
 
             {/* No usable scans yet (e.g. all failed) — keep manual entry reachable. */}
             {doneCount === 0 && !isScanning && (
@@ -134,7 +135,7 @@ export const CaptureScreen: React.FC = () => {
               onClick={commit}
               disabled={!canContinue}
               className="bg-brand px-7 py-3.5 text-[15px] font-extrabold text-brand-on transition-[filter] hover:brightness-110 disabled:opacity-40"
-              whileTap={canContinue ? { scale: 0.98 } : undefined}
+              whileTap={canContinue ? { scale: 0.99 } : undefined}
             >
               Continue &rarr;
             </motion.button>
@@ -142,56 +143,5 @@ export const CaptureScreen: React.FC = () => {
         </>
       )}
     </div>
-  );
-};
-
-interface ScanRowProps {
-  entry: ScanEntry;
-  onRemove: () => void;
-}
-
-/** One receipt row in the capture list — thumbnail, name/merchant, and a scanning / done / failed status. */
-const ScanRow: React.FC<ScanRowProps> = ({ entry, onRemove }) => {
-  const title = entry.merchant || entry.fileName;
-  const status =
-    entry.status === 'scanning' ? (
-      <span className="font-mono text-[11px] text-brand">Scanning…</span>
-    ) : entry.status === 'failed' ? (
-      <span className="font-mono text-[11px] text-status-error">Couldn't scan · remove</span>
-    ) : (
-      <span className="font-mono text-[11px] text-ink-faint">
-        {entry.itemCount} ITEMS · {formatCurrency(entry.subtotal ?? 0)}
-      </span>
-    );
-
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 4 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, x: -16 }}
-      transition={{ duration: DURATION.normal, ease: EASE.out }}
-      className="flex items-center gap-3.5 border border-ink bg-paper-raised p-3"
-    >
-      <img src={entry.previewUrl} alt="" className="h-14 w-11 shrink-0 border border-ink object-cover" />
-      <div className="min-w-0 flex-1">
-        <div className="truncate text-[15px] font-extrabold">{title}</div>
-        <div className="mt-1">{status}</div>
-      </div>
-      {entry.status === 'scanning' ? (
-        <span className="h-6 w-6 shrink-0 animate-spin-slow rounded-full border-[2.5px] border-line border-t-brand" />
-      ) : entry.status === 'done' ? (
-        <span className="flex h-7 w-7 shrink-0 items-center justify-center border border-ink bg-brand text-sm font-extrabold text-brand-on">
-          ✓
-        </span>
-      ) : (
-        <button
-          onClick={onRemove}
-          aria-label="Remove receipt"
-          className="flex h-7 w-7 shrink-0 items-center justify-center border border-ink text-ink-faint transition-[filter] hover:text-status-error"
-        >
-          ×
-        </button>
-      )}
-    </motion.div>
   );
 };

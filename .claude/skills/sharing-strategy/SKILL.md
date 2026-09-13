@@ -27,10 +27,10 @@ The stored payload is `{ name?: string, receipts: Receipt[], people: Person[], v
 ## Short ID Generation
 
 ```typescript
-crypto.randomBytes(8) → map each byte to base62 alphabet
+8 × crypto.randomInt(62) → index into the base62 alphabet
 ```
 
-Base62 alphabet: `0-9A-Za-z`. ~218 trillion combinations — effectively unguessable. Retry on unique-constraint collision (up to 3 attempts).
+Base62 alphabet: `0-9A-Za-z`. ~218 trillion combinations — effectively unguessable. Retry on unique-constraint collision (up to 3 attempts, then a 500).
 
 ## URL Format
 

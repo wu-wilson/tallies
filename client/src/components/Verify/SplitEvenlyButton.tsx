@@ -1,8 +1,8 @@
 import React, { useMemo } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import clsx from 'clsx';
 
-import { DURATION, EASE } from '../../constants/animations';
+import { Icon } from '../common/Icon';
+
 import { useBillStore } from '../../store/billStore';
 
 interface SplitEvenlyButtonProps {
@@ -11,25 +11,25 @@ interface SplitEvenlyButtonProps {
 }
 
 /**
- * Per-receipt toggle that assigns every person to every item in this receipt — or clears them when already
- * in that state. `isSplitEvenly` is derived from current state so the button stays in sync after manual edits.
+ * Receipt-scoped toggle row that assigns every person to every item in this receipt, or clears them when
+ * already in that state. `isSplitEvenly` is derived from current state so the check box stays in sync after
+ * manual edits.
  * @param props - The receipt the toggle controls
- * @returns Inline text button that crossfades between "Split evenly" and "Splitting evenly"
+ * @returns Full-width switch row with a label, a one-line explanation, and a check box carrying the state
  */
 export const SplitEvenlyButton: React.FC<SplitEvenlyButtonProps> = ({ receiptId }) => {
   const { people, receipts, splitReceiptEvenly, unsplitReceiptEvenly } = useBillStore();
-  const receipt = receipts.find((r) => r.id === receiptId);
-  const isDisabled = people.length === 0 || (receipt?.items.length ?? 0) === 0;
+  const items = receipts.find((r) => r.id === receiptId)?.items ?? [];
+  const isDisabled = people.length === 0 || items.length === 0;
 
   const isSplitEvenly = useMemo(() => {
-    const items = receipts.find((r) => r.id === receiptId)?.items ?? [];
-    if (people.length === 0 || items.length === 0) return false;
+    if (isDisabled) return false;
     const peopleIds = new Set(people.map((p) => p.id));
     return items.every(
       (item) =>
         item.assignees.length === peopleIds.size && item.assignees.every((id) => peopleIds.has(id)),
     );
-  }, [receipts, receiptId, people]);
+  }, [isDisabled, items, people]);
 
   const handleClick = () => {
     if (isSplitEvenly) unsplitReceiptEvenly(receiptId);
@@ -37,43 +37,29 @@ export const SplitEvenlyButton: React.FC<SplitEvenlyButtonProps> = ({ receiptId 
   };
 
   return (
-    <motion.button
+    <button
       onClick={handleClick}
       disabled={isDisabled}
+      role="switch"
+      aria-checked={isSplitEvenly}
       className={clsx(
-        'flex items-center gap-1.5 font-mono text-[11px] font-bold transition-colors',
-        isSplitEvenly ? 'text-brand' : 'text-ink-faint hover:text-ink',
+        'flex w-full items-center justify-between gap-3 border-b border-line bg-paper-raised px-3.5 py-3 text-left transition-[filter] hover:brightness-[0.97] sm:px-4',
         isDisabled && 'cursor-not-allowed opacity-40',
       )}
-      whileTap={isDisabled ? undefined : { scale: 0.97 }}
     >
-      <AnimatePresence mode="wait" initial={false}>
-        {isSplitEvenly ? (
-          <motion.span
-            key="active"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: DURATION.fast, ease: EASE.out }}
-            className="flex items-center gap-1.5"
-          >
-            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-              <polyline points="20 6 9 17 4 12" />
-            </svg>
-            SPLITTING EVENLY
-          </motion.span>
-        ) : (
-          <motion.span
-            key="inactive"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: DURATION.fast, ease: EASE.out }}
-          >
-            SPLIT EVENLY
-          </motion.span>
+      <span className="min-w-0">
+        <span className="block text-[13px] font-extrabold text-ink">Split evenly</span>
+        <span className="mt-0.5 block text-xs text-ink-faint">Everyone shares every item on this receipt.</span>
+      </span>
+      <span
+        aria-hidden="true"
+        className={clsx(
+          'flex h-[22px] w-[22px] shrink-0 items-center justify-center border border-ink transition-colors',
+          isSplitEvenly ? 'bg-brand text-brand-on' : 'bg-paper-raised text-transparent',
         )}
-      </AnimatePresence>
-    </motion.button>
+      >
+        <Icon name="check" size={13} />
+      </span>
+    </button>
   );
 };

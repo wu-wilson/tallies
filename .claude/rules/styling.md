@@ -19,9 +19,9 @@ Editorial-brutalist, light warm-paper system. No UI component libraries — buil
 ## Visual Language
 
 - The default `border` is **1.5px solid ink**. Cards: `border bg-paper-raised`, square corners, no shadow. Inner dividers: `border-line` (hairline) or `divide-line`.
-- Buttons / CTAs: square. Primary is a solid `bg-brand text-brand-on` bar; secondary is `border bg-paper-raised`. Hover via `transition-[filter] hover:brightness-110` (or `hover:brightness-[0.97]` on light surfaces). No shadows.
-- Fields are always-on inputs (no click-to-edit swaps): filled `bg-sand-2` boxes (item rows, tax/tip), bare `bg-transparent` inputs over a header band (receipt merchant/date), or framed `border bg-paper-raised` inputs (bill title, Venmo). Every input carries a border (1.5px by default; `border-transparent` on the fills/bare ones, `border-2` on the add-person field to match its dashed button) so the focus state is uniform: `index.css` turns the input border `--brand` on `:focus-visible` (and drops the global box-shadow ring for inputs). Wrap a multi-part field (e.g. the Venmo `@`-prefixed input) and use `focus-within:border-brand` on the container. Buttons/links keep the box-shadow ring.
-- Add / empty states: `border-2 border-dashed` (ink-faint or brand).
+- Buttons / CTAs: square. Primary is a solid `bg-brand text-brand-on` bar; secondary is `border bg-paper-raised`. Hover via `transition-[filter] hover:brightness-110` (or `hover:brightness-[0.97]` on light surfaces). No shadows. Remove controls (trash, ×) are borderless icon-only buttons with a fixed hit box, `text-ink-faint hover:text-status-error`.
+- Fields are always-on inputs (no click-to-edit swaps): filled `bg-sand-2` boxes (item rows, tax/tip), bare `bg-transparent` inputs over a header band (receipt merchant/date), or framed `border bg-paper-raised` inputs (bill title, Venmo). Every input carries a border (1.5px by default; `border-transparent` on the fills/bare ones) so the focus state is uniform: `index.css` turns the input border `--brand` on `:focus-visible` (and drops the global box-shadow ring for inputs). Wrap a multi-part field (e.g. the Venmo `@`-prefixed input) and use `focus-within:border-brand` on the container. Buttons/links keep the box-shadow ring.
+- Tertiary "add" actions (Add item / receipt / person / more, and the capture drop target): a hairline frame, `border border-line bg-paper-raised text-ink` with a `+` glyph, `hover:bg-sand-2` via `transition-colors`. Full-width bars in lists (inset by the row padding inside a card). The item assign box uses the same frame at avatar height so the row never changes height. No dashed borders on controls.
 - Avatars: `rounded-full border` ring over `var(--person-<key>)`, cream initial.
 
 ## Sectioning
@@ -33,7 +33,7 @@ Editorial-brutalist, light warm-paper system. No UI component libraries — buil
 
 - Every clickable element: a hover state with a smooth `transition-colors` or `transition-[filter] duration-150`.
 - No instant visual changes — all state transitions animated.
-- `whileTap={{ scale: 0.97 }}–{ scale: 0.99 }` on interactive buttons via Framer Motion.
+- Press feedback via Framer Motion `whileTap` on standalone block buttons only: `{ scale: 0.99 }` for full-width bars and CTAs, `{ scale: 0.97 }` for compact controls (Add person, the assign box, Everyone / Clear, Copy). None on inline text links, toggles and segmented controls, full-bleed rows (Split evenly, disclosure rows, sheet person rows), remove controls, or avatars.
 
 ## Animation
 

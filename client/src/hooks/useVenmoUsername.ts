@@ -34,17 +34,24 @@ function writeStored(value: string): void {
 export function useVenmoUsername(): { username: string; setUsername: (raw: string) => void } {
   const [username, setUsernameState] = useState<string>(readStored);
   const timerRef = useRef<number | undefined>(undefined);
+  // Value awaiting its debounced write, so an unmount flushes it instead of dropping it.
+  const pendingRef = useRef<string | null>(null);
 
   const setUsername = useCallback((raw: string) => {
     const clean = sanitizeVenmoUsername(raw);
     setUsernameState(clean);
+    pendingRef.current = clean;
     if (timerRef.current !== undefined) window.clearTimeout(timerRef.current);
-    timerRef.current = window.setTimeout(() => writeStored(clean), WRITE_DEBOUNCE_MS);
+    timerRef.current = window.setTimeout(() => {
+      pendingRef.current = null;
+      writeStored(clean);
+    }, WRITE_DEBOUNCE_MS);
   }, []);
 
   useEffect(
     () => () => {
       if (timerRef.current !== undefined) window.clearTimeout(timerRef.current);
+      if (pendingRef.current !== null) writeStored(pendingRef.current);
     },
     [],
   );

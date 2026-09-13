@@ -24,7 +24,7 @@ const STEPS = [
  * @returns The full marketing landing layout
  */
 export const MarketingScreen: React.FC = () => {
-  const setScreen = useBillStore((s) => s.setScreen);
+  const startNewBill = useBillStore((s) => s.startNewBill);
 
   return (
     <div className="min-h-dvh" style={GRID_BG}>
@@ -53,9 +53,9 @@ export const MarketingScreen: React.FC = () => {
             everyone pays you back on Venmo.
           </p>
           <motion.button
-            onClick={() => setScreen('capture')}
+            onClick={startNewBill}
             className="mt-9 bg-brand px-7 py-4 text-base font-extrabold text-brand-on transition-[filter] hover:brightness-110"
-            whileTap={{ scale: 0.98 }}
+            whileTap={{ scale: 0.99 }}
           >
             Upload a receipt &rarr;
           </motion.button>

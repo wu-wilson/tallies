@@ -3,6 +3,13 @@ dotenv.config();
 
 import { Pool } from 'pg';
 
+/** Short operational description of a thrown value: the error code (or name) plus its message. */
+function describeError(err: unknown): string {
+  if (!(err instanceof Error)) return String(err);
+  const code = (err as { code?: string }).code;
+  return [code ?? err.name, err.message].filter(Boolean).join(': ');
+}
+
 /**
  * Deletes expired bills from Postgres and exits.
  *
@@ -20,13 +27,18 @@ async function cleanup(): Promise<void> {
     const result = await pool.query('DELETE FROM bills WHERE expires_at < NOW()');
     console.log(`Deleted ${result.rowCount ?? 0} expired bill(s)`);
   } catch (err) {
-    console.error('Cleanup failed:', err);
+    console.error('Cleanup failed:', describeError(err));
     exitCode = 1;
   } finally {
-    await pool.end();
+    await pool.end().catch((err: unknown) => {
+      console.error('Failed to close pool:', describeError(err));
+    });
   }
 
   process.exit(exitCode);
 }
 
-cleanup();
+cleanup().catch((err: unknown) => {
+  console.error('Cleanup crashed:', describeError(err));
+  process.exit(1);
+});
