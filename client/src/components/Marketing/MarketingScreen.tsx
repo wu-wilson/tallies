@@ -1,7 +1,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 
-import { TallyLogo } from '../common/TallyLogo';
+import { BrandBar } from '../common/BrandBar';
 
 import { useBillStore } from '../../store/billStore';
 
@@ -28,15 +28,7 @@ export const MarketingScreen: React.FC = () => {
 
   return (
     <div className="min-h-dvh" style={GRID_BG}>
-      {/* Nav — bar spans full width; its content aligns with the max-w-3xl column used by every section. */}
-      <nav className="border-b border-ink bg-paper px-5 py-4 sm:px-10">
-        <div className="mx-auto flex max-w-3xl items-center justify-between">
-          <div className="flex items-center gap-3">
-            <TallyLogo size={22} />
-            <span className="text-xl font-black tracking-tight sm:text-[22px]">TALLIES</span>
-          </div>
-        </div>
-      </nav>
+      <BrandBar />
 
       {/* Hero */}
       <section className="border-b border-ink px-5 py-14 sm:px-10 sm:py-20">
