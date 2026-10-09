@@ -1,6 +1,9 @@
 import type { PersonColorKey } from '../constants/colors';
 
-/** Which flow screen is currently visible. `landing` is the marketing front door; `share` is the post-create confirmation. */
+/**
+ * Which flow screen is currently visible. `landing` is the marketing front door; `share` is the
+ * post-create confirmation.
+ */
 export type Screen = 'landing' | 'capture' | 'verify' | 'result' | 'share';
 
 /** A person on the bill, with an auto-assigned color. */
@@ -21,7 +24,9 @@ export interface BillItem {
   assignees: string[];
 }
 
-/** One receipt within a bill — its own merchant, items, and tax/tip. People are shared across all receipts in a bill. */
+/**
+ * One receipt within a bill — its own merchant, items, and tax/tip. People are shared across all receipts in a bill.
+ */
 export interface Receipt {
   id: string;
   merchant: string;
@@ -33,4 +38,14 @@ export interface Receipt {
   tip: number;
   /** When true, `tip` is a percent of this receipt's items subtotal; when false, a flat dollar amount. */
   tipIsPercent: boolean;
+}
+
+/** The fields this client reads from an `/api/ocr` result (the server's schema is wider). */
+export interface OcrResult {
+  merchant?: string | null;
+  /** `YYYY-MM-DD` as the model was asked for, though nothing upstream enforces the format. */
+  date?: string | null;
+  items: { name: string; price: number }[];
+  tax?: number | null;
+  tip?: number | null;
 }

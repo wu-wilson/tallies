@@ -10,7 +10,8 @@ interface ToastState {
 
 /**
  * Hook for single-slot toast state with show/dismiss controls.
- * @returns `{ toast, showToast, dismissToast }` — `showToast(message, variant?)` opens with variant defaulting to `'success'`; `dismissToast()` closes; `toast.showId` increments on every show so `<Toast>` can reset its auto-dismiss timer on back-to-back shows
+ * @returns `{ toast, showToast, dismissToast }` — `showToast(message, variant)` opens it; `dismissToast()` closes;
+ * `toast.showId` increments on every show so `<Toast>` can reset its auto-dismiss timer on back-to-back shows
  */
 export function useToast() {
   const [toast, setToast] = useState<ToastState>({
@@ -20,7 +21,7 @@ export function useToast() {
     showId: 0,
   });
 
-  const showToast = useCallback((message: string, variant: 'success' | 'error' | 'warning' = 'success') => {
+  const showToast = useCallback((message: string, variant: 'success' | 'error' | 'warning') => {
     setToast((prev) => ({ message, variant, isVisible: true, showId: prev.showId + 1 }));
   }, []);
 

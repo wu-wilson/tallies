@@ -1,48 +1,34 @@
 import React from 'react';
-import clsx from 'clsx';
 
 import type { PersonColorKey } from '../../constants/colors';
 
-interface AvatarProps {
-  /** Display name; the first character (uppercased) becomes the avatar's initial. */
-  name: string;
-  color: PersonColorKey;
-  /** Tier — sm=26px (item rows), md=34px (people rows). Defaults to `md`. */
-  size?: 'sm' | 'md';
-  /** When provided, the avatar becomes a clickable button; when omitted, renders as a decorative span. */
-  onClick?: () => void;
-}
-
 const SIZES = {
-  sm: 'h-[26px] w-[26px] text-[11px]',
-  md: 'h-[34px] w-[34px] text-[13px]',
+  sm: 'h-5 w-5 text-[9.5px]',
+  md: 'h-7 w-7 text-xs',
+  lg: 'h-8 w-8 text-[13px]',
 } as const;
 
+interface AvatarProps {
+  /** Display name; its first character, uppercased, becomes the initial. */
+  name: string;
+  color: PersonColorKey;
+  /** sm=20px (piles in item rows), md=28px (people lists), lg=32px (per-person rows). Defaults to `md`. */
+  size?: 'sm' | 'md' | 'lg';
+}
+
 /**
- * Circular person avatar — a 1.5px ink ring around the person's assigned color, with the name's initial.
- * @param props - Avatar configuration
- * @returns Circular button when `onClick` is set, otherwise a decorative span
+ * Solid circle in the person's colour with a white initial. Hidden from assistive tech, since a name always sits
+ * beside it or in its control's label.
+ * @param props - Name, colour key, and size
+ * @returns The avatar
  */
-export const Avatar: React.FC<AvatarProps> = ({ name, color, size = 'md', onClick }) => {
-  const initial = (name || '?').charAt(0).toUpperCase();
-  const className = clsx(
-    'flex shrink-0 items-center justify-center rounded-full border border-ink font-extrabold text-brand-on',
-    SIZES[size],
-  );
-  const style = { backgroundColor: `var(--person-${color})` };
-
-  // Decorative avatars render as a span so they can sit inside other buttons (e.g. the assign sheet rows).
-  if (!onClick) {
-    return (
-      <span className={className} style={style} title={name}>
-        {initial}
-      </span>
-    );
-  }
-
-  return (
-    <button type="button" onClick={onClick} className={className} style={style} title={name}>
-      {initial}
-    </button>
-  );
-};
+export const Avatar: React.FC<AvatarProps> = ({ name, color, size = 'md' }) => (
+  <span
+    aria-hidden="true"
+    title={name}
+    className={`flex shrink-0 items-center justify-center rounded-full font-semibold text-white ${SIZES[size]}`}
+    style={{ backgroundColor: `rgb(var(--person-${color}))` }}
+  >
+    {Array.from(name.trim())[0]?.toUpperCase() ?? '?'}
+  </span>
+);

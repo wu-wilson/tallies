@@ -1,113 +1,52 @@
-import React, { useState } from 'react';
-import { AnimatePresence, motion } from 'framer-motion';
-import clsx from 'clsx';
+import React from 'react';
 
-import { formatCurrency } from '../../lib/billMath';
-
-import { DURATION, EASE } from '../../constants/animations';
+import { formatAmount, formatCurrency } from '../../lib/billMath';
 
 import type { PersonReceiptGroup } from '../../lib/billMath';
 
-/** Above this many co-sharers, the "split with" line shows a count ("split N ways") instead of listing names. */
-const SPLIT_NAMES_LIMIT = 4;
-
-/** Render the "split with" line: names for small splits, a "split N ways" count once it gets crowded. */
-function splitLabel(splitWith: string[]): string {
-  if (splitWith.length <= SPLIT_NAMES_LIMIT) return `SPLIT WITH ${splitWith.join(', ')}`.toUpperCase();
-  return `SPLIT ${splitWith.length + 1} WAYS`;
-}
-
 interface PersonGroupProps {
   group: PersonReceiptGroup;
-  variant: 'result' | 'shared';
-  /** When true (multi-receipt bills), prefix the group with a merchant header + its receipt total. */
-  showMerchant: boolean;
+  /** Everyone on the bill, so a plate shared by the whole table reads "with everyone". */
+  peopleCount: number;
 }
 
 /**
- * One receipt's slice of a person's breakdown — item rows plus the receipt's totals. With a merchant header
- * (multi-receipt people) it's an independently collapsible section, collapsed by default; with a single
- * receipt it renders flat (the person card itself is the toggle).
- * @param props - The receipt group, the card variant, and whether to show the merchant header
- * @returns Collapsible or flat receipt section
+ * One receipt's slice of a person's share: the merchant and what this person owes on it, then each item they had
+ * (noting who they split it with) and their share of the receipt's tax and tip.
+ * @param props - The receipt group and the bill's head count
+ * @returns The group's lines
  */
-export const PersonGroup: React.FC<PersonGroupProps> = ({ group, variant, showMerchant }) => {
-  const [collapsed, setCollapsed] = useState(true);
-  const receiptTotal = group.subtotal + group.taxShare + group.tipShare;
-
-  const body = (
-    <>
-      <div className="px-4 py-3.5">
-        {group.items.map((item) => (
-          <div key={item.itemId} className="mb-2.5 last:mb-0">
-            <div className="flex items-baseline justify-between gap-3">
-              <span className="min-w-0 flex-1 truncate text-sm font-semibold">{item.name || 'Unnamed'}</span>
-              <span className="shrink-0 font-mono text-[13px] font-bold tabular-nums">{formatCurrency(item.amount)}</span>
-            </div>
-            {variant === 'shared' && item.splitWith.length > 0 && (
-              <p className="mt-0.5 font-mono text-[10px] tracking-[0.03em] text-ink-ghost">{splitLabel(item.splitWith)}</p>
-            )}
-          </div>
-        ))}
-      </div>
-
-      <div className="border-t-2 border-dashed border-ink px-4 py-3 font-mono text-[11.5px] text-ink-muted">
-        {variant === 'shared' && <Line label="SUBTOTAL" value={formatCurrency(group.subtotal)} />}
-        <Line label={variant === 'shared' ? 'TAX' : '+ TAX SHARE'} value={formatCurrency(group.taxShare)} />
-        <Line label={variant === 'shared' ? 'TIP' : '+ TIP SHARE'} value={formatCurrency(group.tipShare)} />
-      </div>
-    </>
-  );
-
-  // Single receipt: the person card is already the toggle, so render the slice flat.
-  if (!showMerchant) return <div>{body}</div>;
-
-  return (
-    <div>
-      <button
-        type="button"
-        onClick={() => setCollapsed((c) => !c)}
-        aria-expanded={!collapsed}
-        className="flex w-full items-center justify-between gap-3 bg-paper px-4 py-2.5 text-left"
-      >
-        <span className="flex min-w-0 items-center gap-1.5">
-          <svg
-            className={clsx('shrink-0 text-ink-faint transition-transform duration-150', !collapsed && 'rotate-90')}
-            width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"
-          >
-            <polyline points="9 18 15 12 9 6" />
-          </svg>
-          <span className="truncate text-sm font-extrabold">{group.merchant || 'Untitled receipt'}</span>
-        </span>
-        <span className="shrink-0 font-mono text-[13px] font-bold tabular-nums">{formatCurrency(receiptTotal)}</span>
-      </button>
-
-      <AnimatePresence initial={false}>
-        {!collapsed && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: DURATION.normal, ease: EASE.out }}
-            className="overflow-hidden border-t border-line"
-          >
-            {body}
-          </motion.div>
-        )}
-      </AnimatePresence>
+export const PersonGroup: React.FC<PersonGroupProps> = ({ group, peopleCount }) => (
+  <div>
+    <div className="flex justify-between gap-4 border-b border-line pb-1.5 text-[13.5px] font-medium">
+      <span className="truncate">{group.merchant || 'Receipt'}</span>
+      <span>{formatCurrency(group.roundedTotal)}</span>
     </div>
-  );
-};
-
-interface LineProps {
-  label: string;
-  value: string;
-}
-
-/** One label / value line in a group's totals block. */
-const Line: React.FC<LineProps> = ({ label, value }) => (
-  <div className="flex justify-between py-0.5">
-    <span>{label}</span>
-    <span className="font-bold tabular-nums">{value}</span>
+    <div className="flex flex-col gap-1.5 pt-2 text-[13.5px] text-ink-2">
+      {group.items.map((item) => (
+        <div key={item.itemId} className="flex justify-between gap-4">
+          <span className="min-w-0 [overflow-wrap:anywhere]">
+            {item.name || 'Unnamed item'} <span className="text-ink-3">{splitNote(item.splitWith, peopleCount)}</span>
+          </span>
+          <span className="shrink-0">{formatAmount(item.amount)}</span>
+        </div>
+      ))}
+      <div className="flex justify-between gap-4 text-ink-3">
+        <span>Tax</span>
+        <span>{formatAmount(group.taxShare)}</span>
+      </div>
+      <div className="flex justify-between gap-4 text-ink-3">
+        <span>Tip</span>
+        <span>{formatAmount(group.tipShare)}</span>
+      </div>
+    </div>
   </div>
 );
+
+/** "with Alex", "with Alex and Sam", "with everyone" for the whole table, else "split 5 ways". */
+function splitNote(splitWith: string[], peopleCount: number): string {
+  if (splitWith.length === 0) return '';
+  if (splitWith.length + 1 === peopleCount && peopleCount > 2) return 'with everyone';
+  if (splitWith.length <= 2) return `with ${splitWith.join(' and ')}`;
+  return `split ${splitWith.length + 1} ways`;
+}

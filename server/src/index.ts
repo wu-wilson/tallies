@@ -1,11 +1,11 @@
 import express from 'express';
 
 import { config } from './config';
-import { initDb } from './services/db';
 import { createCorsMiddleware } from './middleware/cors';
 import { errorHandler } from './middleware/errorHandler';
-import { ocrRouter } from './routes/ocr';
 import { billsRouter } from './routes/bills';
+import { ocrRouter } from './routes/ocr';
+import { initDb } from './services/db';
 
 import { describeError } from './lib/describeError';
 

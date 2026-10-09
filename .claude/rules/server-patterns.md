@@ -7,8 +7,8 @@ paths:
 
 ## Routes
 
-- One route handler per file under `server/src/routes/`.
-- Validate every input with Zod before business logic.
+- One router per resource under `server/src/routes/` (`ocr.ts`, `bills.ts`).
+- Validate request bodies and the model's output with Zod before business logic; the share ID is checked against `ID_PATTERN` and uploads with `file-type`.
 - Business logic in `server/src/services/`, not handlers.
 - Single error-handling middleware in `middleware/errorHandler.ts`.
 
@@ -20,7 +20,7 @@ paths:
 - Rate limits via `express-rate-limit` (in-memory). One `writeLimiter` instance shared across POST `/api/ocr` and POST `/api/bills` (so `config.writeRateLimitPerHour`, default 30/hr/IP, is a combined bucket — not per-route). Reads use a separate `readLimiter` (`config.readRateLimitPerHour`, default 200/hr/IP).
 - Image content validation: magic-byte check via `file-type`, reject non-image uploads.
 - 5MB image size cap before OCR forwarding.
-- **Never leak raw upstream error messages.** The `errorHandler` middleware only echoes `err.message` when the thrown error carries `isPublic: true`; everything else becomes "Internal server error". Catch SDK errors (e.g. `Anthropic.APIError`) at the route boundary, log the real cause server-side, and respond with a short, user-safe message. Don't include Zod issue paths, raw model output, or pg error wording in client responses.
+- **Never leak raw upstream error messages.** The `errorHandler` middleware only echoes `err.message` when the thrown error carries `isPublic: true`; everything else becomes "Something went wrong. Try again." Catch SDK errors (e.g. `Anthropic.APIError`) in the service that calls the SDK, log the real cause server-side, and return a short, user-safe message for the route to send. Don't include Zod issue paths, raw model output, or pg error wording in client responses.
 
 ## Database
 

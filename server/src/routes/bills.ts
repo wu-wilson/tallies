@@ -6,7 +6,10 @@ import { getBill, saveBill } from '../services/shortLinks';
 
 import { formatIssues } from '../lib/formatIssues';
 
-/** Bill sharing routes: `POST /api/bills` stores a validated bill and returns its share ID; `GET /api/bills/:id` reads one (404 when missing or expired). */
+/**
+ * Bill sharing routes: `POST /api/bills` stores a validated bill and returns its share ID; `GET /api/bills/:id` reads
+ * one (404 when missing or expired).
+ */
 export const billsRouter = Router();
 
 billsRouter.post('/bills', writeLimiter, async (req, res, next) => {
@@ -14,7 +17,7 @@ billsRouter.post('/bills', writeLimiter, async (req, res, next) => {
     const validated = BillPayloadSchema.safeParse(req.body);
     if (!validated.success) {
       console.error(`Invalid bill payload: ${formatIssues(validated.error.issues)}`);
-      res.status(400).json({ error: 'Invalid bill data' });
+      res.status(400).json({ error: "Couldn't create the link. Try again." });
       return;
     }
 

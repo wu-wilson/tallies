@@ -1,20 +1,20 @@
 import React from 'react';
 
-interface VenmoWordmarkProps {
-  /** Tailwind text-color (and any sizing) utilities — defaults to the Venmo blue token. */
-  className?: string;
-}
-
-/** System-font stack matching Venmo's own wordmark, kept off the Archivo display face. */
+/** System-font stack matching Venmo's own wordmark, kept off the Hanken Grotesk face. */
 const VENMO_FONT = "-apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif";
 
+interface VenmoWordmarkProps {
+  /** Text colour and size utilities. */
+  className: string;
+}
+
 /**
- * The Venmo wordmark rendered as styled text (italic, system font) — used in the handle field and pay button.
- * @param props - Optional className carrying the text color and size
- * @returns Inline "venmo" wordmark, marked decorative
+ * The Venmo wordmark set as styled text (heavy italic system font), used on pay buttons.
+ * @param props - Classes carrying the colour and size
+ * @returns Inline "venmo" wordmark, hidden from assistive tech
  */
-export const VenmoWordmark: React.FC<VenmoWordmarkProps> = ({ className = 'text-venmo' }) => (
-  <span aria-hidden="true" className={`font-extrabold italic tracking-tight ${className}`} style={{ fontFamily: VENMO_FONT }}>
+export const VenmoWordmark: React.FC<VenmoWordmarkProps> = ({ className }) => (
+  <span aria-hidden="true" className={`font-extrabold italic tracking-[-0.03em] ${className}`} style={{ fontFamily: VENMO_FONT }}>
     venmo
   </span>
 );

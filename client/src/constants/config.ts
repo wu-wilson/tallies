@@ -10,11 +10,17 @@ export const MAX_RECEIPTS = 20;
 /** Max items on a single receipt (matches server-side cap). */
 export const MAX_ITEMS = 200;
 
-/** Max length of a person's name. */
+/** Max length of a bill, merchant, or person name (matches server-side cap). */
 export const MAX_NAME_LENGTH = 100;
 
-/** Max length of an item name. */
+/** Max length of an item name (matches server-side cap). */
 export const MAX_ITEM_NAME_LENGTH = 200;
+
+/** Largest dollar amount a price, tax, or tip field takes, so a mistyped number can't break the layout or the math. */
+export const MAX_AMOUNT = 99_999.99;
+
+/** Largest percentage a tax or tip rate field takes. */
+export const MAX_RATE = 100;
 
 /** Max length of a Venmo username (matches server-side regex bound). */
 export const VENMO_USERNAME_MAX_LENGTH = 30;

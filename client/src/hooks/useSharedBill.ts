@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 import { API_URL } from '../constants/config';
 
@@ -6,13 +6,15 @@ import type { BillItem, Person, Receipt } from '../types/bill';
 
 /** Normalized shared bill — always in the receipts shape, regardless of payload version. */
 export interface SharedBill {
-  /** Optional bill title; absent on bills shared before the field existed (falls back to "Your bill"). */
+  /** Optional bill title; absent when the bill was shared unnamed (falls back to "Your bill"). */
   name?: string;
   receipts: Receipt[];
   people: Person[];
-  /** Bill owner's Venmo handle; absent on bills shared before the field existed (no pay button rendered). */
+  /** The person who paid and is owed by everyone else; absent when none was chosen or on older bills. */
+  payerId?: string;
+  /** The payer's Venmo handle; absent on bills shared without one (no pay button rendered). */
   venmoUsername?: string;
-  /** ISO timestamp at which the share link expires. Absent on bills shared before the field was added. */
+  /** ISO timestamp at which the share link expires, added by the server on every read. */
   expiresAt?: string;
 }
 
@@ -21,6 +23,7 @@ interface RawBill {
   name?: string | null;
   receipts?: Receipt[];
   people?: Person[];
+  payerId?: string | null;
   venmoUsername?: string | null;
   merchant?: string | null;
   date?: string | null;
@@ -39,6 +42,7 @@ function normalizeBill(data: RawBill): SharedBill {
       name: data.name ?? undefined,
       receipts: data.receipts,
       people: data.people ?? [],
+      payerId: data.payerId ?? undefined,
       venmoUsername: data.venmoUsername ?? undefined,
       expiresAt: data.expiresAt,
     };
@@ -61,53 +65,64 @@ function normalizeBill(data: RawBill): SharedBill {
   };
 }
 
+/** Shown when the server answers but the bill can't be read. */
+const LOAD_FAILED = "Couldn't load this bill. Try again in a moment.";
+
 /**
- * Hook that fetches a shared bill from `/api/bills/:id`, normalizing legacy flat payloads into the
- * receipts shape. Tracks loading and error state. The server returns the same 404 for both expired and
- * missing bills, so the two cases are indistinguishable to the caller.
+ * Hook that fetches a shared bill from `/api/bills/:id` and tracks loading and error state, normalizing legacy flat
+ * payloads into the receipts shape. Expired and missing bills both arrive as the same 404.
  * @param id - 8-char base62 share ID from the URL
- * @returns `{ bill, isLoading, error }` — `bill` is `null` until the fetch resolves; `error` is a message string on any failed fetch (404, non-OK status, or network error) and `null` otherwise
+ * @returns `{ bill, isLoading, isNotFound, error, retry }` — `bill` is null until loaded; `isNotFound` marks a missing
+ * or expired link; `error` is a user-safe message for any other failure (null otherwise); `retry()` fetches again
  */
 export function useSharedBill(id: string) {
   const [bill, setBill] = useState<SharedBill | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isNotFound, setIsNotFound] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [attempt, setAttempt] = useState(0);
+
+  const retry = useCallback(() => setAttempt((n) => n + 1), []);
 
   useEffect(() => {
-    let cancelled = false;
+    let isCancelled = false;
 
     async function fetchBill() {
       setIsLoading(true);
+      setIsNotFound(false);
       setError(null);
 
       try {
-        const response = await fetch(`${API_URL}/api/bills/${id}`);
-
+        const response = await fetch(`${API_URL}/api/bills/${id}`).catch(() => null);
+        if (isCancelled) return;
+        if (!response) {
+          setError("Couldn't reach Tallies. Check your connection and try again.");
+          return;
+        }
+        if (response.status === 404) {
+          setIsNotFound(true);
+          return;
+        }
+        const data = await response.json().catch(() => null);
+        if (isCancelled) return;
         if (!response.ok) {
-          if (response.status === 404) {
-            throw new Error('Bill not found');
-          }
-          throw new Error(`Failed to load bill (${response.status})`);
+          setError(data?.error || LOAD_FAILED);
+          return;
         }
-
-        const data = await response.json();
-        if (!cancelled) {
-          setBill(normalizeBill(data));
-        }
-      } catch (err) {
-        if (!cancelled) {
-          setError(err instanceof Error ? err.message : 'Failed to load bill');
-        }
+        setBill(normalizeBill(data));
+      } catch {
+        // A malformed payload that can't be normalized.
+        if (!isCancelled) setError(LOAD_FAILED);
       } finally {
-        if (!cancelled) {
-          setIsLoading(false);
-        }
+        if (!isCancelled) setIsLoading(false);
       }
     }
 
     fetchBill();
-    return () => { cancelled = true; };
-  }, [id]);
+    return () => {
+      isCancelled = true;
+    };
+  }, [id, attempt]);
 
-  return { bill, isLoading, error };
+  return { bill, isLoading, isNotFound, error, retry };
 }

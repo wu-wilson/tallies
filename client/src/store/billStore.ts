@@ -1,38 +1,45 @@
 import { create } from 'zustand';
 
+import { roundToCents } from '../lib/billMath';
+import { formatReceiptDate, todayIso } from '../lib/dates';
+
 import { PERSON_COLORS } from '../constants/colors';
-import { MAX_PEOPLE, MAX_ITEMS, MAX_RECEIPTS } from '../constants/config';
+import { MAX_ITEMS, MAX_PEOPLE, MAX_RECEIPTS } from '../constants/config';
 
-import type { Screen, Person, BillItem, Receipt } from '../types/bill';
-
-/** Shape returned from `/api/ocr` (only the fields this client actually reads — the server schema is wider). */
-interface OcrResult {
-  merchant?: string | null;
-  date?: string | null;
-  items: { name: string; price: number }[];
-  tax?: number | null;
-  tip?: number | null;
-}
+import type { BillItem, OcrResult, Person, Receipt, Screen } from '../types/bill';
 
 interface BillState {
   screen: Screen;
-  /** Optional bill title. Empty by default — unnamed bills fall back to "Your bill" on the breakdown (see `deriveBillName`). */
+  /**
+   * Optional bill title. Empty by default — unnamed bills fall back to "Your bill" on the breakdown
+   * (see `deriveBillName`).
+   */
   name: string;
   receipts: Receipt[];
   people: Person[];
-  /** Transient one-shot notice (e.g. "1 of 2 receipts couldn't be scanned") surfaced once on Verify, then cleared. */
+  /**
+   * One-shot notice (e.g. "Couldn't read 1 of 2 receipts. Add it with Add another receipt.") shown once on Verify,
+   * then cleared.
+   */
   scanNotice: string | null;
   /** Share URL for the current bill once its link has been created; drives the Share screen. Null until created. */
   shareUrl: string | null;
+  /** The Venmo handle sent with that link, so the Share screen describes what friends will actually see. */
+  shareVenmoUsername: string | null;
+  /** The person who paid the bill and is owed by everyone else; null until chosen on Result. */
+  payerId: string | null;
 }
 
 interface BillActions {
   setScreen: (screen: Screen) => void;
   /** Discard any previous bill (including its share link) and open Capture for a fresh one. */
   startNewBill: () => void;
+  /** Add scanned receipts to the bill and open Verify. A fresh bill starts empty via `startNewBill`. */
   loadOcrResults: (results: OcrResult[]) => void;
   setScanNotice: (notice: string | null) => void;
-  setShareUrl: (url: string | null) => void;
+  /** Record the created link and the Venmo handle sent with it. */
+  setShareLink: (url: string, venmoUsername: string | null) => void;
+  setPayerId: (personId: string | null) => void;
   setName: (name: string) => void;
 
   addReceipt: () => void;
@@ -66,6 +73,8 @@ const initialState: BillState = {
   people: [],
   scanNotice: null,
   shareUrl: null,
+  shareVenmoUsername: null,
+  payerId: null,
 };
 
 /** Fresh client-side UUID — used as the ID for in-memory receipts, people, and items. */
@@ -73,12 +82,9 @@ function uid(): string {
   return crypto.randomUUID();
 }
 
-/** Today's date as `YYYY-MM-DD`, used as the default for receipts with no OCR date. */
-function today(): string {
-  return new Date().toISOString().split('T')[0];
-}
-
-/** Returns the first `PERSON_COLORS` entry not in use, wrapping by `people.length % PERSON_COLORS.length` past 8 people. */
+/**
+ * Returns the first `PERSON_COLORS` entry not in use, wrapping by `people.length % PERSON_COLORS.length` past 8 people.
+ */
 function nextColor(people: Person[]): typeof PERSON_COLORS[number] {
   const used = new Set(people.map((p) => p.color));
   const available = PERSON_COLORS.find((c) => !used.has(c));
@@ -87,28 +93,28 @@ function nextColor(people: Person[]): typeof PERSON_COLORS[number] {
 }
 
 /**
- * Build a `Receipt` from one OCR result. The OCR `price` is the item's line total (already accounts for
- * quantity/weight), so it's stored directly and `quantity` is pinned to 1 — the UI has no quantity editor
- * and treating each row as a single line total avoids price/quantity drift (and handles by-weight items).
- * A null OCR tip defaults to a 20% tip; a null tax defaults to $0 flat.
+ * Build a `Receipt` from one OCR result, with dollar amounts rounded to the cent and each line total stored as the
+ * price with `quantity` pinned to 1 (which also covers by-weight items). A null tip becomes 20%; a null tax $0 flat.
  */
 function receiptFromOcr(result: OcrResult): Receipt {
   const items: BillItem[] = result.items.map((item) => ({
     id: uid(),
     name: item.name,
-    price: item.price,
+    price: roundToCents(item.price),
     quantity: 1,
     assignees: [],
   }));
   const tipFromOcr = result.tip ?? null;
+  // Keep the scan's date only when it's a real `YYYY-MM-DD` (a timestamp's date part counts); otherwise use today's.
+  const ocrDate = result.date?.slice(0, 10) ?? '';
   return {
     id: uid(),
     merchant: result.merchant || '',
-    date: result.date || today(),
+    date: formatReceiptDate(ocrDate) ? ocrDate : todayIso(),
     items,
-    tax: result.tax ?? 0,
+    tax: roundToCents(result.tax ?? 0),
     taxIsPercent: false,
-    tip: tipFromOcr ?? 20,
+    tip: tipFromOcr === null ? 20 : roundToCents(tipFromOcr),
     tipIsPercent: tipFromOcr === null,
   };
 }
@@ -118,7 +124,7 @@ function blankReceipt(): Receipt {
   return {
     id: uid(),
     merchant: '',
-    date: today(),
+    date: todayIso(),
     items: [],
     tax: 0,
     taxIsPercent: false,
@@ -138,10 +144,8 @@ function mapItem(receipt: Receipt, itemId: string, fn: (i: BillItem) => BillItem
 }
 
 /**
- * Zustand store — single source of truth for the bill flow (screen, receipts, people, share URL).
- * A bill holds one or more receipts (each with its own merchant, items, and tax/tip) plus a shared set of people.
- * The `landing → capture → verify → result → share` screen lives here; `loadOcrResults` bakes a batch of OCR
- * payloads into receipts and transitions to Verify.
+ * Zustand store, the single source of truth for the bill flow: the current screen, the receipts (each with its own
+ * merchant, items, and tax/tip), the people shared across them, the payer, and the share link.
  * @returns The store hook; call with a selector to subscribe to a slice
  */
 export const useBillStore = create<BillState & BillActions>()((set, get) => ({
@@ -152,20 +156,21 @@ export const useBillStore = create<BillState & BillActions>()((set, get) => ({
   startNewBill: () => set({ ...initialState, screen: 'capture' }),
 
   loadOcrResults: (results) => {
-    // Enforce the receipt cap here too, so the store never holds more than a shareable bill allows
-    // regardless of how many images were scanned.
+    // Scans add to the bill being built (going back from Verify keeps its people and edits). Enforce the receipt
+    // cap here too, so the store never holds more than a shareable bill allows.
     set({
-      name: '',
-      receipts: results.slice(0, MAX_RECEIPTS).map(receiptFromOcr),
-      people: [],
+      receipts: [...get().receipts, ...results.map(receiptFromOcr)].slice(0, MAX_RECEIPTS),
       shareUrl: null,
+      shareVenmoUsername: null,
       screen: 'verify',
     });
   },
 
   setScanNotice: (scanNotice) => set({ scanNotice }),
 
-  setShareUrl: (shareUrl) => set({ shareUrl }),
+  setShareLink: (shareUrl, shareVenmoUsername) => set({ shareUrl, shareVenmoUsername }),
+
+  setPayerId: (payerId) => set({ payerId }),
 
   setName: (name) => set({ name }),
 
@@ -196,9 +201,10 @@ export const useBillStore = create<BillState & BillActions>()((set, get) => ({
   },
 
   removePerson: (id) => {
-    const { people, receipts } = get();
+    const { people, receipts, payerId } = get();
     set({
       people: people.filter((p) => p.id !== id),
+      payerId: payerId === id ? null : payerId,
       receipts: receipts.map((r) => ({
         ...r,
         items: r.items.map((item) => ({
@@ -240,10 +246,10 @@ export const useBillStore = create<BillState & BillActions>()((set, get) => ({
     set({
       receipts: mapReceipt(get().receipts, receiptId, (r) =>
         mapItem(r, itemId, (i) => {
-          const has = i.assignees.includes(personId);
+          const isAssigned = i.assignees.includes(personId);
           return {
             ...i,
-            assignees: has ? i.assignees.filter((a) => a !== personId) : [...i.assignees, personId],
+            assignees: isAssigned ? i.assignees.filter((a) => a !== personId) : [...i.assignees, personId],
           };
         }),
       ),

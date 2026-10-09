@@ -11,13 +11,11 @@ function describeError(err: unknown): string {
 }
 
 /**
- * Deletes expired bills from Postgres and exits.
- *
- * Runs as a Railway cron service weekly (Sundays at 09:00 UTC). `DATABASE_URL` defaults to the local
- * dev URL, matching the server's behavior — a misconfigured production env surfaces as a connection
- * error rather than a silent no-op. Exits 1 on any query or connection failure, 0 otherwise.
+ * Delete expired bills from Postgres and exit, run weekly as a Railway cron service (Sundays at 09:00 UTC).
+ * Exits 1 on any query or connection failure, 0 otherwise.
  */
 async function cleanup(): Promise<void> {
+  // Same local default as the server, so a misconfigured production env fails on connect instead of doing nothing.
   const databaseUrl = process.env.DATABASE_URL || 'postgresql://localhost:5432/tallies';
 
   const pool = new Pool({ connectionString: databaseUrl, max: 1 });

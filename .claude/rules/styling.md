@@ -7,37 +7,43 @@ paths:
 
 # Styling
 
-Editorial-brutalist, light warm-paper system. No UI component libraries — build all components from scratch with Tailwind.
+A light, restrained system in the spirit of Stripe and Forge: white surfaces, hairlines, one typeface, light two-tone headlines, and very little colour. No UI component libraries — build all components from scratch with Tailwind.
 
 ## Theming
 
-- All colors via CSS custom properties / Tailwind semantic tokens. Never hardcode hex in components (no `bg-[#ABC]`).
-- Light mode only — palette defined on `:root` in `index.css`. Never use Tailwind `dark:` prefixes.
-- Forest green brand (`text-brand`/`bg-brand`) carries primary CTAs, active toggle states, and focus indication. Rust (`text-rust`) is for eyebrows, the logo slash, and warnings. Venmo blue is reserved for the pay handoff.
+- All colors via CSS custom properties / Tailwind semantic tokens. Never hardcode hex in components (no `bg-[#ABC]`). Tokens are RGB channels on `:root` in `index.css`, mapped through `rgb(var(--token) / <alpha-value>)`, so opacity modifiers work (`bg-ink/40`). SVG art reads them as `rgb(var(--token))`.
+- Light mode only. Never use Tailwind `dark:` prefixes.
+- Ink (`bg-ink`) carries primary buttons. `settled` green marks things that are read, paid, selected, or done (a ready split, finished steps, success ticks), focused fields, and the capture drop zone (its upload tile and drag-over frame); every other control's keyboard focus is the 2px ink outline from `index.css`. Coral appears only in the logo's slash and the hero art. Venmo blue is reserved for the pay handoff.
 - Person colors are functional (identify individuals) — never used as UI accents outside that role.
+- Status is always words (with an icon where it helps), never coloured dots or pills.
+- Forced-colors mode (Windows contrast themes) drops backgrounds and recolours text, so state never rides on those alone: hidden marks use opacity, edges come from transparent borders or outlines, and the switch knob uses `CanvasText`. Tailwind's `outline-none` is itself a transparent outline, so apply it only on focus (`focus:outline-none`); `.field` and `.cell` add theirs while focused, which is their focus cue in that mode.
 
 ## Visual Language
 
-- The default `border` is **1.5px solid ink**. Cards: `border bg-paper-raised`, square corners, no shadow. Inner dividers: `border-line` (hairline) or `divide-line`.
-- Buttons / CTAs: square. Primary is a solid `bg-brand text-brand-on` bar; secondary is `border bg-paper-raised`. Hover via `transition-[filter] hover:brightness-110` (or `hover:brightness-[0.97]` on light surfaces). No shadows. Remove controls (trash, ×) are borderless icon-only buttons with a fixed hit box, `text-ink-faint hover:text-status-error`.
-- Fields are always-on inputs (no click-to-edit swaps): filled `bg-sand-2` boxes (item rows, tax/tip), bare `bg-transparent` inputs over a header band (receipt merchant/date), or framed `border bg-paper-raised` inputs (bill title, Venmo). Every input carries a border (1.5px by default; `border-transparent` on the fills/bare ones) so the focus state is uniform: `index.css` turns the input border `--brand` on `:focus-visible` (and drops the global box-shadow ring for inputs). Wrap a multi-part field (e.g. the Venmo `@`-prefixed input) and use `focus-within:border-brand` on the container. Buttons/links keep the box-shadow ring.
-- Tertiary "add" actions (Add item / receipt / person / more, and the capture drop target): a hairline frame, `border border-line bg-paper-raised text-ink` with a `+` glyph, `hover:bg-sand-2` via `transition-colors`. Full-width bars in lists (inset by the row padding inside a card). The item assign box uses the same frame at avatar height so the row never changes height. No dashed borders on controls.
-- Avatars: `rounded-full border` ring over `var(--person-<key>)`, cream initial.
+- App screens sit on `bg-ground`; cards are `CARD` from `components/common/styles.ts` (`rounded-xl border border-line bg-surface shadow-card`). The landing page is `bg-surface` throughout.
+- Inside cards, rows are divided by `border-line-soft`; card edges and section breaks use `border-line`.
+- Buttons come from `styles.ts`: `BUTTON_PRIMARY` (ink), `BUTTON_SECONDARY` (outlined white), `BUTTON_GHOST` (quiet text actions like Add item), and `BUTTON_REMOVE` (fixed-size × or trash that warms to red). Size them with `h-*`/`px-*` at the call site.
+- Fields: `.field` for framed inputs (the payer, Venmo, tax and tip, a new person) and `.cell` for inputs that read as text until hovered or focused (item names and prices, merchants, the bill name). Both draw a green focus border and ring, so inputs never show the global outline.
+- Segmented controls (`common/Segmented`) for small exclusive choices: tip presets, % or $.
+- The capture drop zone, Add another receipt, and an unassigned item's Assign button use a dashed `border-line-strong` frame; the in-card Add item and Add person rows are `BUTTON_GHOST`.
+- Avatars: solid `rgb(var(--person-<key>))` circles with a white initial; piles overlap with a white ring (`AvatarPile`).
 
-## Sectioning
+## Typography
 
-- Section structure comes from uppercase Roboto Mono micro-labels (`font-mono text-[10px]–text-[11px] font-bold tracking-[0.06em] text-ink-faint`) plus generous whitespace, and from `border`/`border-line` rules between bands.
-- Header bands inside cards use `bg-sand-3` with a `border-b` ink rule; per-person totals dash off with `border-t-2 border-dashed`.
+- Hanken Grotesk only, self-hosted. No monospace: figures use tabular numerals (set on `body`).
+- Headlines are light (300) with tight tracking and two tones: an ink lead-in and a `text-ink-4` continuation. Screen titles are 400; labels and card titles are 500.
 
 ## Interactive States
 
-- Every clickable element: a hover state with a smooth `transition-colors` or `transition-[filter] duration-150`.
+- Every clickable element: a hover state with `transition-colors` (or `transition-[filter]` on the Venmo button) at 200ms; framed `.field`s darken their border to ink-4. Disabled and `aria-disabled` controls don't react to hover (`enabled:hover:`, or `aria-disabled:hover:` resets).
+- State reads at 3:1: unchecked boxes and the off switch draw their edges (and the switch its knob) in ink-4.
 - No instant visual changes — all state transitions animated.
-- Press feedback via Framer Motion `whileTap` on standalone block buttons only: `{ scale: 0.99 }` for full-width bars and CTAs, `{ scale: 0.97 }` for compact controls (Add person, the assign box, Everyone / Clear, Copy). None on inline text links, toggles and segmented controls, full-bleed rows (Split evenly, disclosure rows, sheet person rows), remove controls, or avatars.
+- No press-scale feedback; hover and focus states carry the interaction. Hover styles apply only where a pointer can hover (`future.hoverOnlyWhenSupported` for utilities, the same media query around `.cell:hover`), so a tapped row on a phone doesn't stay tinted.
 
 ## Animation
 
 - Duration constants from `constants/animations.ts`. All in-flow ≤300ms.
-- Prefer `transform` and `opacity` (GPU-accelerated). Use `AnimatePresence` for mount/unmount, `layout` for position changes (e.g. PeopleBar `popLayout`).
+- Prefer `transform` and `opacity` (GPU-accelerated). Use `AnimatePresence` for mount/unmount and height for expand/collapse.
 - No page-load or entrance animations — screens render immediately.
-- Keyframe utility: `animate-spin-slow` (scan spinner).
+- The landing's two demo loops (`demo-*`, `how-*` in `index.css`) are the only ambient motion. Their resting styles form a complete still (the hero fully assigned with the pay button ready, the steps on step 1), which is what reduced motion shows.
+- Spinners use Tailwind's `animate-spin`.

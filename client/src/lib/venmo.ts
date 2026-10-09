@@ -50,7 +50,7 @@ interface VenmoPaymentParams {
 interface VenmoLink {
   href: string;
   /** True for the desktop web page (new tab); false for the mobile app hand-offs (same tab). */
-  openInNewTab: boolean;
+  shouldOpenInNewTab: boolean;
 }
 
 /**
@@ -69,19 +69,19 @@ export function buildVenmoLink({ username, amount, memo }: VenmoPaymentParams): 
   switch (detectPlatform()) {
     case 'ios':
       // Opens the app when installed; iOS shows an "address invalid" alert if it isn't (no clean fallback).
-      return { href: `venmo://paycharge?${query}`, openInNewTab: false };
+      return { href: `venmo://paycharge?${query}`, shouldOpenInNewTab: false };
     case 'android': {
       // Chrome opens the app, or natively navigates to browser_fallback_url (the Play Store) when it isn't installed.
       const fallback = encodeURIComponent(PLAY_STORE_URL);
       return {
         href: `intent://paycharge?${query}#Intent;scheme=venmo;package=com.venmo;S.browser_fallback_url=${fallback};end`,
-        openInNewTab: false,
+        shouldOpenInNewTab: false,
       };
     }
     default:
       return {
         href: `https://account.venmo.com/u/${recipient}?txn=pay&amount=${amountParam}&note=${note}`,
-        openInNewTab: true,
+        shouldOpenInNewTab: true,
       };
   }
 }

@@ -1,128 +1,116 @@
 import React, { useEffect, useMemo } from 'react';
-import { motion } from 'framer-motion';
 
+import { AppBar } from '../common/AppBar';
+import { Avatar } from '../common/Avatar';
+import { BackLink } from '../common/BackLink';
 import { Icon } from '../common/Icon';
+import { BUTTON_PRIMARY, BUTTON_SECONDARY, CARD, CARD_TITLE, LINK_MUTED } from '../common/styles';
 import { Toast } from '../common/Toast';
-import { VenmoWordmark } from './VenmoWordmark';
 
 import { useShare } from '../../hooks/useShare';
 import { useToast } from '../../hooks/useToast';
-import { useVenmoUsername } from '../../hooks/useVenmoUsername';
 import { useBillStore } from '../../store/billStore';
 
 import { deriveAssignedTotals, formatCurrency } from '../../lib/billMath';
-import { isValidVenmoUsername } from '../../lib/venmo';
-
-import { DURATION, EASE } from '../../constants/animations';
 
 /**
- * Share screen — the post-create confirmation. Surfaces the generated short link with Copy and native
- * Share actions, and notes the Venmo pay handoff when a handle is set. Bounces back to Result if no link
- * has been created yet (e.g. on a stray visit).
- * @returns The share confirmation layout with a transient toast
+ * Share screen, after the link is created: the short link with Copy and Share, and who owes the payer what (or
+ * everyone's share when nobody was marked as paying). Bounces back to Result if no link exists yet.
+ * @returns The share confirmation layout
  */
 export const ShareScreen: React.FC = () => {
   const receipts = useBillStore((s) => s.receipts);
   const people = useBillStore((s) => s.people);
+  const payerId = useBillStore((s) => s.payerId);
   const shareUrl = useBillStore((s) => s.shareUrl);
+  const shareVenmoUsername = useBillStore((s) => s.shareVenmoUsername);
   const setScreen = useBillStore((s) => s.setScreen);
+  const startNewBill = useBillStore((s) => s.startNewBill);
   const { copyLink, nativeShare, hasNativeShare } = useShare();
   const { toast, showToast, dismissToast } = useToast();
-  const { username } = useVenmoUsername();
 
-  const { total } = useMemo(() => deriveAssignedTotals(receipts, people), [receipts, people]);
-  const hasVenmo = isValidVenmoUsername(username);
+  const { breakdowns } = useMemo(() => deriveAssignedTotals(receipts, people), [receipts, people]);
+  const payer = people.find((p) => p.id === payerId);
+  // Someone with nothing on the bill doesn't owe the payer anything.
+  const owing = payer ? breakdowns.filter((b) => b.personId !== payer.id && b.roundedTotal > 0) : breakdowns;
+  const owed = owing.reduce((sum, b) => sum + b.roundedTotal, 0);
+  const hasVenmo = shareVenmoUsername !== null;
 
   useEffect(() => {
     if (!shareUrl) setScreen('result');
   }, [shareUrl, setScreen]);
 
   if (!shareUrl) return null;
+  const displayUrl = shareUrl.replace(/^https?:\/\//, '');
+  const idStart = displayUrl.lastIndexOf('/') + 1;
 
-  const handleCopy = async () => {
-    const copied = await copyLink(shareUrl);
-    showToast(copied ? 'Link copied' : "Couldn't copy — long-press the link", copied ? 'success' : 'warning');
-  };
-
+  const showCopyResult = (isCopied: boolean) =>
+    showToast(isCopied ? 'Link copied' : "Couldn't copy the link. Press and hold it to copy.", isCopied ? 'success' : 'warning');
+  const handleCopy = async () => showCopyResult(await copyLink(shareUrl));
+  // Without a share sheet (or when it fails) the link is copied instead.
   const handleShare = async () => {
     const outcome = await nativeShare(shareUrl);
-    if (outcome === 'copied') showToast('Link copied', 'success');
-    else if (outcome === 'failed') showToast("Couldn't share the link — try again", 'warning');
+    if (outcome !== 'shared') showCopyResult(outcome === 'copied');
   };
 
-  return (
-    <div className="mx-auto min-h-dvh max-w-xl px-5 pt-[calc(28px+env(safe-area-inset-top))]">
-      <button
-        onClick={() => setScreen('result')}
-        className="mb-6 inline-flex items-center gap-1.5 font-mono text-sm font-bold text-ink-faint transition-[filter] hover:text-ink"
-      >
-        <Icon name="arrow-left" size={12} />
-        Back
-      </button>
+  let sentence = 'Send this link to the group. Everyone sees what they owe.';
+  if (payer && hasVenmo) sentence = `Send this link to the group. Everyone sees their share and can pay ${payer.name} back on Venmo.`;
+  else if (payer) sentence = `Send this link to the group. Everyone sees what they owe ${payer.name}.`;
 
-      <motion.div
-        initial={{ opacity: 0, y: 6 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: DURATION.smooth, ease: EASE.out }}
-        className="flex items-center gap-4"
-      >
-        <span className="flex h-[52px] w-[52px] shrink-0 items-center justify-center bg-brand text-brand-on">
-          <Icon name="check" size={26} />
-        </span>
-        <div>
-          <h1 className="text-2xl font-black tracking-tight">Your split is ready</h1>
-          <div className="mt-1 font-mono text-xs text-ink-faint">
-            {formatCurrency(total)} · {people.length} {people.length === 1 ? 'person' : 'people'}
+  return (
+    <div className="flex min-h-dvh flex-col">
+      <AppBar />
+      <main className="flex-1 px-5 pb-14 pt-7">
+        <div className="mx-auto max-w-[540px]">
+          <BackLink label="Edit the split" onClick={() => setScreen('result')} />
+          <span className="mt-6 flex h-12 w-12 items-center justify-center rounded-xl bg-settled-wash text-settled">
+            <Icon name="check" size={24} />
+          </span>
+          <h1 tabIndex={-1} className="mt-5 text-[clamp(26px,2.3vw,32px)] leading-tight tracking-[-0.035em] focus:outline-none">Your split is ready</h1>
+          <p className="mt-2 text-[15px] text-ink-2 [text-wrap:pretty]">{sentence}</p>
+
+          <div className={`mt-7 flex items-center gap-3 py-1.5 pl-4 pr-1.5 ${CARD}`}>
+            {/* The break opportunity after "/b/" moves the ID to its own line whole on the narrowest phones. */}
+            <span className="min-w-0 flex-1 text-[15px] font-medium [overflow-wrap:anywhere]">
+              {displayUrl.slice(0, idStart)}
+              <wbr />
+              {displayUrl.slice(idStart)}
+            </span>
+            <button type="button" onClick={handleCopy} className={`h-10 shrink-0 px-3.5 text-sm ${BUTTON_SECONDARY}`}>
+              <Icon name="copy" size={15} />
+              Copy
+            </button>
+          </div>
+          <button type="button" onClick={handleShare} className={`mt-3 h-12 w-full text-[15px] ${BUTTON_PRIMARY}`}>
+            <Icon name="share" size={16} />
+            {hasNativeShare ? 'Share link' : 'Copy and share'}
+          </button>
+
+          {owing.length > 0 && (
+            <section aria-label={payer ? `Who owes ${payer.name}` : "Everyone's share"} className={`mt-7 overflow-hidden ${CARD}`}>
+              <div className="flex items-baseline justify-between gap-3 px-[18px] pb-2.5 pt-3.5">
+                <h2 className={`min-w-0 [overflow-wrap:anywhere] ${CARD_TITLE}`}>{payer ? `Who owes ${payer.name}` : "Everyone's share"}</h2>
+                <span className="shrink-0 text-[13px] text-ink-3">{formatCurrency(owed)} in total</span>
+              </div>
+              {owing.map((b) => (
+                <div key={b.personId} className="flex h-[52px] items-center gap-3 border-t border-line-soft px-[18px]">
+                  <Avatar name={b.personName} color={b.personColor} />
+                  <span className="min-w-0 flex-1 truncate text-[14.5px] font-medium">{b.personName}</span>
+                  <span className="text-[15px] font-semibold">{formatCurrency(b.roundedTotal)}</span>
+                </div>
+              ))}
+            </section>
+          )}
+
+          <div className="mt-5 flex flex-wrap items-center justify-between gap-x-4 gap-y-2 text-[13.5px]">
+            <span className="text-ink-3">This link works for 30 days.</span>
+            <button type="button" onClick={startNewBill} className={LINK_MUTED}>
+              Start a new bill
+            </button>
           </div>
         </div>
-      </motion.div>
-
-      {hasVenmo && (
-        <div className="mt-7 flex items-center gap-2.5 border border-ink bg-paper-raised px-4 py-3.5">
-          <span className="font-mono text-[11px] font-bold tracking-[0.04em] text-ink-faint">EVERYONE PAYS YOU WITH</span>
-          <VenmoWordmark className="text-venmo" />
-        </div>
-      )}
-
-      <p className="mt-8 font-mono text-[11px] font-bold tracking-[0.06em] text-ink-faint">YOUR SHAREABLE LINK</p>
-      <div className="mt-2.5 flex border border-ink">
-        <div className="flex-1 truncate bg-paper-raised px-4 py-3.5 font-mono text-[13px]">{shareUrl}</div>
-        <motion.button
-          onClick={handleCopy}
-          className="border-l border-ink bg-paper px-6 text-sm font-extrabold transition-[filter] hover:brightness-[0.97]"
-          whileTap={{ scale: 0.97 }}
-        >
-          Copy
-        </motion.button>
-      </div>
-
-      <motion.button
-        onClick={handleShare}
-        className="mt-3 flex w-full items-center justify-center gap-2 bg-brand px-4 py-4 text-[15px] font-extrabold text-brand-on transition-[filter] hover:brightness-110"
-        whileTap={{ scale: 0.99 }}
-      >
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0">
-          <circle cx="18" cy="5" r="3" />
-          <circle cx="6" cy="12" r="3" />
-          <circle cx="18" cy="19" r="3" />
-          <line x1="8.59" y1="13.51" x2="15.42" y2="17.49" />
-          <line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
-        </svg>
-        {hasNativeShare ? 'Share…' : 'Copy & share'}
-      </motion.button>
-
-      <p className="mt-6 font-mono text-[11px] leading-relaxed text-ink-faint">
-        Anyone with the link sees their share{hasVenmo ? ' and pays you on Venmo' : ''} — no account needed. Shared bills
-        last 30 days.
-      </p>
-
-      <Toast
-        message={toast.message}
-        variant={toast.variant}
-        isVisible={toast.isVisible}
-        showId={toast.showId}
-        onDismiss={dismissToast}
-      />
+      </main>
+      <Toast message={toast.message} variant={toast.variant} isVisible={toast.isVisible} showId={toast.showId} onDismiss={dismissToast} />
     </div>
   );
 };

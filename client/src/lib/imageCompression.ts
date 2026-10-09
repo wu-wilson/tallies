@@ -1,10 +1,11 @@
 import { IMAGE_MAX_DIMENSION, IMAGE_QUALITY } from '../constants/config';
 
 /**
- * Resize and re-encode a receipt photo before OCR upload.
- * Rejects (rather than returns) if the file can't be decoded, the canvas context can't be acquired, or the encode fails.
- * @param file - Original image (any browser-supported format) from the file picker
- * @returns JPEG `Blob` whose longest edge is at most `IMAGE_MAX_DIMENSION` pixels, encoded at `IMAGE_QUALITY` — smaller-than-max images are re-encoded but not upscaled
+ * Resize and re-encode a receipt photo before OCR upload. Rejects (rather than returns) if the file can't be decoded,
+ * the canvas context can't be acquired, or the encode fails.
+ * @param file - Original image (any browser-supported format), picked or dropped on Capture
+ * @returns JPEG `Blob` whose longest edge is at most `IMAGE_MAX_DIMENSION` pixels, encoded at `IMAGE_QUALITY` —
+ * smaller-than-max images are re-encoded but not upscaled
  */
 export async function compressImage(file: File): Promise<Blob> {
   return new Promise((resolve, reject) => {

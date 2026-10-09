@@ -79,7 +79,7 @@ The script installs dependencies on first run, then starts the API server on por
 
 > Requires Node.js 18+ and npm 9+.
 
-The cron service is not started by `launch.sh` — it's a scheduled job that only runs on Railway. To test it locally: `cd cron && npm run dev`.
+The cron service is not started by `launch.sh` — it's a scheduled job that only runs on Railway. To test it locally: `cd cron && npm install && npm run dev`.
 
 ## ☁️ Deployment
 
