@@ -77,7 +77,7 @@ psql tallies -f schema.sql
 
 The script installs dependencies on first run, then starts the API server on port `3001` and the client on `http://localhost:5173`.
 
-> Requires Node.js 18+ and npm 9+.
+> Requires Node.js 20+ and npm 9+.
 
 The cron service is not started by `launch.sh` — it's a scheduled job that only runs on Railway. To test it locally: `cd cron && npm install && npm run dev`.
 
