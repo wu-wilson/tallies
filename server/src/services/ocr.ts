@@ -65,7 +65,7 @@ export async function readReceipt(image: Buffer, mediaType: AllowedMime): Promis
 
   try {
     const response = await client.messages.create({
-      model: 'claude-sonnet-4-6',
+      model: 'claude-sonnet-5-5',
       // About 18 tokens per item, so this covers the 200-item cap with room to spare (only what's used is billed).
       max_tokens: 8192,
       // Receipt extraction is a bounded structured task — skip thinking and run low effort to cut latency.

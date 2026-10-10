@@ -21,7 +21,7 @@ Source of truth: `client/src/lib/imageCompression.ts`, `server/src/routes/ocr.ts
 1. `multer` accepts a single file upload, capped at `config.maxImageSizeBytes` (default 5 MB). The `uploadReceipt` wrapper turns a `MulterError` into a user-safe response before the handler runs: 413 for `LIMIT_FILE_SIZE`, 400 for anything else.
 2. Magic-byte validation via `file-type` — rejects non-JPEG/PNG/WebP.
 3. Buffer converted to base64.
-4. Claude Sonnet (`claude-sonnet-4-6`) called with image + OCR prompt (capped at about 3 minutes across the SDK's retries, so a stalled call can't hold the client's scan queue; the cap comes back as 502 "Couldn't scan this receipt") — thinking disabled and `effort: 'low'` for latency, with `output_config.format` set to a JSON-schema mirror of `OcrResponseSchema` (`OCR_JSON_SCHEMA`) so the model returns conformant JSON.
+4. Claude Sonnet (`claude-sonnet-5-5`) called with image + OCR prompt (capped at about 3 minutes across the SDK's retries, so a stalled call can't hold the client's scan queue; the cap comes back as 502 "Couldn't scan this receipt") — thinking disabled and `effort: 'low'` for latency, with `output_config.format` set to a JSON-schema mirror of `OcrResponseSchema` (`OCR_JSON_SCHEMA`) so the model returns conformant JSON.
 5. Response text parsed as JSON — structured output yields clean JSON; a markdown-fence strip remains as a defensive no-op.
 6. Validated with `OcrResponseSchema.safeParse()`.
 7. Merchant name stripped of addresses/phone numbers.
