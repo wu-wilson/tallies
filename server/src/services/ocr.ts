@@ -68,8 +68,9 @@ export async function readReceipt(image: Buffer, mediaType: AllowedMime): Promis
       model: 'claude-sonnet-5-5',
       // About 18 tokens per item, so this covers the 200-item cap with room to spare (only what's used is billed).
       max_tokens: 8192,
-      // Receipt extraction is a bounded structured task — skip thinking and run low effort to cut latency.
-      thinking: { type: 'disabled' },
+      // Receipt extraction is a bounded structured task, so no thinking and low effort, to cut latency. On this model
+      // `between_tools` is the off switch: it only writes updates between tool calls, and this request has no tools.
+      thinking: { type: 'between_tools' },
       // Constrain output to the receipt JSON schema (no fences/prose); Zod still validates value bounds.
       output_config: { effort: 'low', format: { type: 'json_schema', schema: OCR_JSON_SCHEMA } },
       messages: [{
