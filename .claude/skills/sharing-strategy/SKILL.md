@@ -6,7 +6,7 @@ user-invocable: true
 
 # Sharing Strategy
 
-Source of truth: `server/src/routes/bills.ts`, `server/src/services/shortLinks.ts`, `cron/src/index.ts`, `schema.sql`.
+Source of truth: `server/src/routes/bills.ts`, `server/src/schemas/billPayload.ts`, `server/src/services/shortLinks.ts`, `cron/src/index.ts`, `schema.sql`, and the client's `useShare` and `useSharedBill`.
 
 ## Flow
 
@@ -20,9 +20,7 @@ Source of truth: `server/src/routes/bills.ts`, `server/src/services/shortLinks.t
 
 ## Payload Shape
 
-The stored payload is `{ name: string | null, receipts: Receipt[], people: Person[], payerId: string | null, venmoUsername: string | null }` (validated by `BillPayloadSchema`, which also checks that `payerId` names someone in `people`). `name` is the optional bill title — when empty, the display falls back to "Your bill" (`deriveBillName`). `payerId` is who paid, chosen on Result; the shared view marks them "Paid the bill" and gives them no pay button. `venmoUsername` is the payer's optional Venmo handle (the client remembers handles per payer name in `localStorage`, so picking a different payer never prefills someone else's); with it, the expanded row of everyone else who owes something carries a "Pay Alex $X" button for their rounded share. Each receipt carries its own `merchant`, `date`, `items`, and `tax`/`tip`. Aggregates are derived at render time, not persisted.
-
-**Back-compat:** bills shared before multi-receipt used a flat shape (`{ merchant, date, items, tax, … }`). The server stores `data` as `JSONB` and returns it untouched, so the client normalizes on read — `useSharedBill`'s `normalizeBill()` wraps a legacy flat payload as a single-receipt bill. No SQL migration; old links keep rendering and age out via the 30-day TTL.
+The stored payload is `{ name: string | null, receipts: Receipt[], people: Person[], payerId: string | null, venmoUsername: string | null }` (validated by `BillPayloadSchema`, which also checks that `payerId` names someone in `people`). `name` is the optional bill title — when empty, the display falls back to "Your bill" (`deriveBillName`). `payerId` is who paid, chosen on Result; the shared view marks them "Paid the bill" and gives them no pay button. `venmoUsername` is the payer's optional Venmo handle (the client remembers handles per payer name in `localStorage`, so picking a different payer never prefills someone else's); with it, the expanded row of everyone else who owes something carries a "Pay Alex $X" button for their rounded share. Each receipt carries its own `merchant`, `date`, `items`, and `tax`/`tip`. Aggregates are derived at render time, not persisted. A new field must be optional, since links made before it stay readable for 30 days, and it needs adding to `useShare`'s payload, `BillPayloadSchema` (which drops keys it doesn't list), and `useSharedBill`'s `toSharedBill` (which copies fields by name).
 
 ## Short ID Generation
 

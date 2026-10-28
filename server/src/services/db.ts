@@ -4,7 +4,7 @@ import { config } from '../config';
 
 import { describeError } from '../lib/describeError';
 
-import type { QueryResult } from 'pg';
+import type { QueryResult, QueryResultRow } from 'pg';
 
 let pool: Pool | null = null;
 
@@ -17,12 +17,13 @@ export async function initDb(): Promise<void> {
   pool = new Pool({
     connectionString: config.databaseUrl,
     max: 10,
-    // Fail fast when Postgres is unreachable instead of holding the request open.
+    // Fail fast when Postgres is unreachable, or connected but unresponsive, instead of holding the request open.
     connectionTimeoutMillis: 5000,
+    query_timeout: 5000,
   });
 
   pool.on('error', (err) => {
-    console.error('Unexpected database pool error:', err.message);
+    console.error(`Unexpected database pool error: ${describeError(err)}`);
   });
 
   try {
@@ -38,9 +39,13 @@ export async function initDb(): Promise<void> {
  * Run a parameterized query against the pool.
  * @param text - SQL with `$1`, `$2`, ... placeholders; never interpolate user input
  * @param params - Values to bind to the placeholders, in order
- * @returns The raw `pg` `QueryResult`; rejects before `initDb()` has run or when Postgres can't be reached
+ * @returns The `pg` `QueryResult`, its rows typed as `R`; rejects before `initDb()` has run or when Postgres can't be
+ * reached
  */
-export async function query(text: string, params?: unknown[]): Promise<QueryResult> {
+export async function query<R extends QueryResultRow = QueryResultRow>(
+  text: string,
+  params?: unknown[],
+): Promise<QueryResult<R>> {
   if (!pool) throw new Error('Database pool not initialized');
-  return pool.query(text, params);
+  return pool.query<R>(text, params);
 }

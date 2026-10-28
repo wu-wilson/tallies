@@ -1,5 +1,7 @@
+import { MAX_AMOUNT } from '../constants/config';
+
 import type { PersonColorKey } from '../constants/colors';
-import type { Person, Receipt } from '../types/bill';
+import type { BillItem, Person, Receipt } from '../types/bill';
 
 /** One assigned item's per-person amount plus the names of co-assignees. */
 export interface ItemBreakdown {
@@ -20,7 +22,7 @@ export interface PersonReceiptGroup {
   taxShare: number;
   /** This person's proportional tip share for this receipt, rounded like the item amounts. */
   tipShare: number;
-  /** This receipt's share rounded to the cent, so a person's groups add up to their `roundedTotal`. */
+  /** This person's share of the receipt's total, to the cent; their groups add up to their `roundedTotal`. */
   roundedTotal: number;
 }
 
@@ -49,14 +51,38 @@ function resolveAmount(value: number, isPercent: boolean, subtotal: number): num
   return value;
 }
 
+/** A receipt priced as one charge: its subtotal, tax, and tip at full precision, and its total in whole cents. */
+interface Charge {
+  subtotal: number;
+  tax: number;
+  tip: number;
+  /** The total rounded to the cent on its own, as the receipt itself was charged. */
+  totalCents: number;
+}
+
+/**
+ * Price some of a receipt's items as one charge, resolving its tax and tip against their subtotal.
+ * @param receipt - The receipt, for its tax and tip
+ * @param items - The items charged: all of them on Verify, the assigned ones on Result
+ * @returns The charge, its total rounded to the cent
+ */
+function chargeFor(receipt: Receipt, items: BillItem[]): Charge {
+  // Summed in whole cents, since prices are stored to the cent and a long float sum can drift off a half cent.
+  const subtotal = items.reduce((sum, i) => sum + toCents(i.price) * i.quantity, 0) / 100;
+  const tax = resolveAmount(receipt.tax, receipt.taxIsPercent, subtotal);
+  const tip = resolveAmount(receipt.tip, receipt.tipIsPercent, subtotal);
+  return { subtotal, tax, tip, totalCents: toCents(subtotal + tax + tip) };
+}
+
 /**
  * Compute each person's share of the bill: their items grouped by receipt, plus each receipt's tax and tip split
  * among that receipt's people by their share of its subtotal. Unassigned items are left out; someone with none gets an
  * empty $0 breakdown, so everyone on the bill is listed.
  * @param receipts - All receipts on the bill (each carries its own items and tax/tip)
  * @param people - All people on the bill (shared across receipts)
- * @returns Per-person breakdowns sorted by name, with `roundedTotal` and every group line rounded to the cent so each
- * level adds up to the one above it, and everyone's totals add up to the bill
+ * @returns Per-person breakdowns sorted by name. Each receipt's total is split to the cent among its people, a person's
+ * `roundedTotal` is the sum of their shares, and each group's lines add up to its share, so everyone's totals add up to
+ * the bill
  */
 function computeBreakdowns(receipts: Receipt[], people: Person[]): PersonBreakdown[] {
   const personMap = new Map<string, Person>();
@@ -64,20 +90,26 @@ function computeBreakdowns(receipts: Receipt[], people: Person[]): PersonBreakdo
     personMap.set(person.id, person);
   }
 
-  // One breakdown per person, in `people` order, with their full-precision totals alongside.
+  // One breakdown per person, in `people` order, with their total in cents alongside, and how far that total runs
+  // over their exact share, so each receipt's spare cents go to whoever is furthest behind and nobody's total drifts.
   const result: PersonBreakdown[] = people.map((p) => ({ personId: p.id, personName: p.name, personColor: p.color, groups: [], roundedTotal: 0 }));
-  const exactTotals = people.map(() => 0);
+  const totalCents = people.map(() => 0);
+  const drift = people.map(() => 0);
 
   for (const receipt of receipts) {
+    const assigned = receipt.items.filter((i) => i.assignees.length > 0);
+    if (assigned.length === 0) continue;
+    const charge = chargeFor(receipt, assigned);
+
     // Per-person slice of this one receipt.
     const slice = new Map<string, { items: ItemBreakdown[]; subtotal: number }>();
     for (const person of people) {
       slice.set(person.id, { items: [], subtotal: 0 });
     }
 
-    for (const item of receipt.items) {
-      if (item.assignees.length === 0) continue;
-      const perPersonAmount = (item.price * item.quantity) / item.assignees.length;
+    for (const item of assigned) {
+      // Priced in whole cents like `chargeFor`, so the shares split the same subtotal the receipt's total comes from.
+      const perPersonAmount = (toCents(item.price) * item.quantity) / 100 / item.assignees.length;
 
       for (const personId of item.assignees) {
         const s = slice.get(personId);
@@ -90,35 +122,38 @@ function computeBreakdowns(receipts: Receipt[], people: Person[]): PersonBreakdo
       }
     }
 
-    const receiptSubtotal = Array.from(slice.values()).reduce((sum, s) => sum + s.subtotal, 0);
-    const taxAmount = resolveAmount(receipt.tax, receipt.taxIsPercent, receiptSubtotal);
-    const tipAmount = resolveAmount(receipt.tip, receipt.tipIsPercent, receiptSubtotal);
     // A receipt whose assigned items are all free still owes any flat tax or tip: split it evenly among its people.
     const participants = people.filter((p) => (slice.get(p.id)?.items.length ?? 0) > 0).length;
 
+    const shares: { k: number; group: PersonReceiptGroup }[] = [];
     for (const [k, person] of people.entries()) {
       const s = slice.get(person.id);
       if (!s || s.items.length === 0) continue;
-      const proportion = receiptSubtotal > 0 ? s.subtotal / receiptSubtotal : 1 / participants;
-      const personTax = taxAmount * proportion;
-      const personTip = tipAmount * proportion;
-      result[k].groups.push({
+      const proportion = charge.subtotal > 0 ? s.subtotal / charge.subtotal : 1 / participants;
+      const group: PersonReceiptGroup = {
         receiptId: receipt.id,
         merchant: receipt.merchant,
         items: s.items,
-        taxShare: personTax,
-        tipShare: personTip,
+        taxShare: charge.tax * proportion,
+        tipShare: charge.tip * proportion,
         roundedTotal: 0,
-      });
-      exactTotals[k] += s.subtotal + personTax + personTip;
+      };
+      result[k].groups.push(group);
+      shares.push({ k, group });
     }
+
+    // Split the receipt's own rounded total among its people, so their shares add up to what it was charged.
+    const exactShares = shares.map(({ group }) => groupTotal(group));
+    const shareCents = allocateCents(exactShares, charge.totalCents, shares.map(({ k }) => drift[k]));
+    shares.forEach(({ k, group }, j) => {
+      roundGroup(group, shareCents[j]);
+      totalCents[k] += shareCents[j];
+      drift[k] += shareCents[j] - exactShares[j] * 100;
+    });
   }
 
-  const cents = allocateCents(exactTotals);
   result.forEach((b, i) => {
-    b.roundedTotal = cents[i] / 100;
-    const groupCents = allocateCents(b.groups.map(groupTotal), cents[i]);
-    b.groups.forEach((g, j) => roundGroup(g, groupCents[j]));
+    b.roundedTotal = totalCents[i] / 100;
   });
 
   result.sort((a, b) => a.personName.localeCompare(b.personName));
@@ -150,14 +185,18 @@ function roundGroup(group: PersonReceiptGroup, totalCents: number): void {
  * Round amounts to whole cents with the largest-remainder method, so the rounded parts still add up to the
  * rounded whole (rounding each share on its own can leave the shares a cent off the bill total).
  * @param amounts - Dollar amounts at full precision, all non-negative
- * @param targetCents - The whole the parts must add up to; defaults to the rounded sum of `amounts`
+ * @param targetCents - The whole the parts must add up to
+ * @param drift - Cents each part is already over its exact amount elsewhere, which lowers its claim on a spare cent
  * @returns Whole-cent amounts in the same order, summing to `targetCents`
  */
-function allocateCents(amounts: number[], targetCents = toCents(amounts.reduce((sum, a) => sum + a, 0))): number[] {
+function allocateCents(amounts: number[], targetCents: number, drift?: number[]): number[] {
   const exact = amounts.map((a) => Number((a * 100).toPrecision(15)));
   const cents = exact.map((c) => Math.floor(c));
   let remaining = targetCents - cents.reduce((sum, c) => sum + c, 0);
-  const byRemainder = exact.map((c, i) => ({ i, remainder: c - cents[i] })).sort((x, y) => y.remainder - x.remainder);
+  // Only a part with a fraction of a cent takes a spare one, so an exact amount is never shown a cent off.
+  const byRemainder = exact
+    .map((c, i) => ({ i, priority: c > cents[i] ? c - cents[i] - (drift?.[i] ?? 0) : -Infinity }))
+    .sort((x, y) => y.priority - x.priority);
   for (const { i } of byRemainder) {
     if (remaining <= 0) break;
     cents[i] += 1;
@@ -169,10 +208,10 @@ function allocateCents(amounts: number[], targetCents = toCents(amounts.reduce((
 /**
  * Round the parts of a ledger to the cent so they add up to the total shown under them (see `allocateCents`).
  * @param parts - Dollar amounts at full precision, all non-negative
- * @param targetCents - The total in cents; defaults to the rounded sum of `parts`
+ * @param targetCents - The total in cents
  * @returns The parts in dollars, each a whole number of cents
  */
-function roundParts(parts: number[], targetCents?: number): number[] {
+function roundParts(parts: number[], targetCents: number): number[] {
   return allocateCents(parts, targetCents).map((c) => c / 100);
 }
 
@@ -186,6 +225,15 @@ const USD = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD',
  */
 function toCents(amount: number): number {
   return Math.round(Number((amount * 100).toPrecision(15)));
+}
+
+/**
+ * Store a scanned dollar amount the way a typed one is: capped at `MAX_AMOUNT` and rounded to the cent.
+ * @param amount - Dollar amount read from a receipt
+ * @returns The amount as its field would hold it
+ */
+export function toFieldAmount(amount: number): number {
+  return roundToCents(Math.min(amount, MAX_AMOUNT));
 }
 
 /**
@@ -230,8 +278,8 @@ function formatPercentage(value: number, isPercent: boolean, subtotal: number): 
 }
 
 /**
- * Combined live totals over every receipt's items (assigned or not), rounded to the cent so the parts add up
- * to `total`.
+ * Combined totals for a set of receipts: each receipt's total rounded to the cent on its own, as it was charged, and
+ * summed, with its subtotal, tax, and tip rounded to add up to it, so the parts add up to `total`.
  */
 export interface BillTotals {
   subtotal: number;
@@ -241,29 +289,32 @@ export interface BillTotals {
 }
 
 /**
- * Combine subtotal, tax, and tip across all receipts using every item (assigned or not), so the Verify screen
- * shows the full running total while editing. Tax/tip are resolved per receipt against that receipt's subtotal.
+ * Total a set of receipt charges: each one's subtotal, tax, and tip rounded to add up to its total, then summed.
+ * @param charges - One charge per receipt
+ * @returns The combined totals in dollars
+ */
+function sumCharges(charges: Charge[]): BillTotals {
+  let subtotal = 0;
+  let tax = 0;
+  let tip = 0;
+  let total = 0;
+  for (const charge of charges) {
+    const [s, t, p] = allocateCents([charge.subtotal, charge.tax, charge.tip], charge.totalCents);
+    subtotal += s;
+    tax += t;
+    tip += p;
+    total += charge.totalCents;
+  }
+  return { subtotal: subtotal / 100, taxAmount: tax / 100, tipAmount: tip / 100, total: total / 100 };
+}
+
+/**
+ * Total receipts over every item, assigned or not, so the Verify screen shows the full running total while editing.
  * @param receipts - The receipts to total: the whole bill for Verify's summary, or a single receipt for its own ledger
- * @returns Combined `subtotal`, `taxAmount`, `tipAmount`, and `total` in dollars, the three parts rounded so they
- * add up to the rounded total
+ * @returns Combined `subtotal`, `taxAmount`, `tipAmount`, and `total` in dollars
  */
 export function deriveBillTotals(receipts: Receipt[]): BillTotals {
-  let subtotal = 0;
-  let taxAmount = 0;
-  let tipAmount = 0;
-  for (const receipt of receipts) {
-    const rSub = receipt.items.reduce((sum, i) => sum + i.price * i.quantity, 0);
-    subtotal += rSub;
-    taxAmount += resolveAmount(receipt.tax, receipt.taxIsPercent, rSub);
-    tipAmount += resolveAmount(receipt.tip, receipt.tipIsPercent, rSub);
-  }
-  const [roundedSubtotal, roundedTax, roundedTip] = roundParts([subtotal, taxAmount, tipAmount]);
-  return {
-    subtotal: roundedSubtotal,
-    taxAmount: roundedTax,
-    tipAmount: roundedTip,
-    total: toCents(subtotal + taxAmount + tipAmount) / 100,
-  };
+  return sumCharges(receipts.map((receipt) => chargeFor(receipt, receipt.items)));
 }
 
 /**
@@ -272,7 +323,7 @@ export function deriveBillTotals(receipts: Receipt[]): BillTotals {
 export interface ReceiptSummary {
   receiptId: string;
   merchant: string;
-  /** Rounded to the cent so the receipts add up to the bill's total. */
+  /** This receipt's assigned total, rounded to the cent on its own; the receipts add up to the bill's total. */
   total: number;
   /** Pre-formatted percent string like `"7.5%"` for this receipt's tax. */
   taxPercent: string;
@@ -288,7 +339,7 @@ export interface AssignedTotals {
   taxAmount: number;
   /** Combined tip across receipts. */
   tipAmount: number;
-  /** The bill's total, rounded to the cent like every amount here. */
+  /** The bill's total: its receipts' totals, each rounded to the cent on its own, added up. */
   total: number;
   /** Per-receipt assigned-only summaries — only receipts that have at least one assigned item. */
   receiptSummaries: ReceiptSummary[];
@@ -309,45 +360,27 @@ export interface AssignedTotals {
  */
 export function deriveAssignedTotals(receipts: Receipt[], people: Person[]): AssignedTotals {
   const receiptSummaries: ReceiptSummary[] = [];
-  let subtotal = 0;
-  let taxAmount = 0;
-  let tipAmount = 0;
+  const charges: Charge[] = [];
   let itemCount = 0;
 
   for (const receipt of receipts) {
     const assigned = receipt.items.filter((i) => i.assignees.length > 0);
     if (assigned.length === 0) continue;
 
-    const rSub = assigned.reduce((sum, i) => sum + i.price * i.quantity, 0);
-    const rTax = resolveAmount(receipt.tax, receipt.taxIsPercent, rSub);
-    const rTip = resolveAmount(receipt.tip, receipt.tipIsPercent, rSub);
-
+    const charge = chargeFor(receipt, assigned);
     receiptSummaries.push({
       receiptId: receipt.id,
       merchant: receipt.merchant,
-      total: rSub + rTax + rTip,
-      taxPercent: formatPercentage(receipt.tax, receipt.taxIsPercent, rSub),
-      tipPercent: formatPercentage(receipt.tip, receipt.tipIsPercent, rSub),
+      total: charge.totalCents / 100,
+      taxPercent: formatPercentage(receipt.tax, receipt.taxIsPercent, charge.subtotal),
+      tipPercent: formatPercentage(receipt.tip, receipt.tipIsPercent, charge.subtotal),
     });
-
-    subtotal += rSub;
-    taxAmount += rTax;
-    tipAmount += rTip;
+    charges.push(charge);
     itemCount += assigned.length;
   }
 
-  const totalCents = toCents(subtotal + taxAmount + tipAmount);
-  const receiptTotals = roundParts(receiptSummaries.map((r) => r.total), totalCents);
-  receiptSummaries.forEach((r, i) => {
-    r.total = receiptTotals[i];
-  });
-  const [roundedSubtotal, roundedTax, roundedTip] = roundParts([subtotal, taxAmount, tipAmount], totalCents);
-
   return {
-    subtotal: roundedSubtotal,
-    taxAmount: roundedTax,
-    tipAmount: roundedTip,
-    total: totalCents / 100,
+    ...sumCharges(charges),
     receiptSummaries,
     receiptCount: receiptSummaries.length,
     itemCount,

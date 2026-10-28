@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useEffect, useMemo, useRef } from 'react';
 import { Link, useParams } from 'react-router-dom';
 
 import { AppBar } from '../common/AppBar';
@@ -32,18 +32,31 @@ export const SharedView: React.FC = () => {
 
   const totals = useMemo(() => (bill ? deriveAssignedTotals(bill.receipts, bill.people) : null), [bill]);
 
+  // Try again gives way to the loading view, which drops focus to the page. Once the retry settles, focus the heading
+  // that replaced it (the bill, not-found, or the error again), so a screen reader says how it went.
+  const isRetryingRef = useRef(false);
+  useEffect(() => {
+    if (isLoading || !isRetryingRef.current) return;
+    isRetryingRef.current = false;
+    document.querySelector<HTMLElement>('main h1')?.focus({ preventScroll: true });
+  }, [isLoading]);
+  const handleRetry = () => {
+    isRetryingRef.current = true;
+    retry();
+  };
+
   if (isLoading) {
     return (
       <div className="flex min-h-dvh flex-col items-center justify-center gap-3 px-6">
         <span className="h-6 w-6 animate-spin rounded-full border-2 border-line border-t-ink" />
-        <p className="text-[13.5px] text-ink-3">Loading the bill</p>
+        <p role="status" className="text-[13.5px] text-ink-3">Loading the bill</p>
       </div>
     );
   }
 
   if (isNotFound) return <NotFound />;
 
-  if (error || !bill || !totals) return <LoadError message={error} onRetry={retry} />;
+  if (error || !bill || !totals) return <LoadError message={error} onRetry={handleRetry} />;
 
   const payer = bill.people.find((p) => p.id === bill.payerId);
   const venmoUsername = bill.venmoUsername && isValidVenmoUsername(bill.venmoUsername) ? bill.venmoUsername : undefined;
@@ -61,7 +74,11 @@ export const SharedView: React.FC = () => {
     <div className="flex min-h-dvh flex-col">
       <AppBar
         action={
-          <Link to="/" onClick={startNewBill} className={`text-[13.5px] ${LINK_MUTED}`}>
+          <Link
+            to="/"
+            onClick={startNewBill}
+            className={`relative text-[13.5px] before:absolute before:inset-x-0 before:-inset-y-2 before:content-[''] ${LINK_MUTED}`}
+          >
             Split your own bill
           </Link>
         }
@@ -72,7 +89,7 @@ export const SharedView: React.FC = () => {
             {payer && <Avatar name={payer.name} color={payer.color} size="sm" />}
             <span className="min-w-0 [overflow-wrap:anywhere]">{payer ? `${payer.name} shared this bill with you` : 'Shared with you'}</span>
           </p>
-          <h1 className="mt-3.5 break-words text-[clamp(26px,2.3vw,32px)] leading-tight tracking-[-0.035em]">{deriveBillName(bill.name)}</h1>
+          <h1 tabIndex={-1} className="mt-3.5 break-words text-[clamp(26px,2.3vw,32px)] leading-tight tracking-[-0.035em] focus:outline-none">{deriveBillName(bill.name)}</h1>
           <p className="mt-1 text-sm text-ink-3">{meta.join(' · ')}</p>
           <p className="mt-[18px] text-[clamp(44px,4.6vw,64px)] font-light leading-none tracking-[-0.045em]">{formatCurrency(totals.total)}</p>
 

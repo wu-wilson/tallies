@@ -20,7 +20,6 @@ Before releases, after major changes, or periodically during development.
 - Per-person totals sum each person's per-receipt proportional tax/tip correctly, and their rounded totals add up exactly to the bill total
 - Who paid (Result) travels with the share link: the payer reads "Paid the bill" on the shared view and everyone else's pay button names them
 - Bill sharing roundtrips (POST then GET produces identical state)
-- Legacy flat share payloads render as a single-receipt bill
 - Expired bills return 404
 - Cron script connects, deletes expired rows, logs count, exits cleanly
 - OCR errors fall back to manual entry without blocking
@@ -34,7 +33,7 @@ Before releases, after major changes, or periodically during development.
 - Animations ≤ 300ms
 
 ### Conventions
-- No `any`; no `as` casts unless unavoidable (pg row casting and error-shape widening are the existing exceptions)
+- No `any`; no `as` casts unless unavoidable (the error-shape widening in `errorHandler` is the existing exception)
 - No hardcoded hex in component files
 - No default exports
 - No business logic in route handlers (belongs in services)

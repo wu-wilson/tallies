@@ -12,7 +12,7 @@ import type { ScanEntry } from '../../hooks/useOcr';
 
 interface ScanRowProps {
   entry: ScanEntry;
-  onRemove: () => void;
+  onRemove: (e: React.MouseEvent<HTMLButtonElement>) => void;
 }
 
 /**

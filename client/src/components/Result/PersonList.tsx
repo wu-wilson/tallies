@@ -31,7 +31,7 @@ interface PersonListProps {
  */
 export const PersonList: React.FC<PersonListProps> = ({ breakdowns, peopleCount, title, hint, variant, payerId, payerName, venmoUsername, venmoMemo, total }) => (
   <section aria-label={title} className={`overflow-hidden ${CARD}`}>
-    <div className="flex flex-wrap items-baseline justify-between gap-x-3 px-[18px] pb-2.5 pt-3.5">
+    <div className="flex flex-wrap items-baseline justify-between gap-x-3 px-[18px] pb-2.5 pt-4">
       <h2 className={CARD_TITLE}>{title}</h2>
       <p className="min-w-0 text-[13px] text-ink-3 [overflow-wrap:anywhere]">{hint}</p>
     </div>
@@ -48,7 +48,7 @@ export const PersonList: React.FC<PersonListProps> = ({ breakdowns, peopleCount,
       />
     ))}
     {total !== undefined && (
-      <div className="flex items-baseline justify-between gap-4 border-t border-line bg-ground py-3.5 pl-[18px] pr-11">
+      <div className="flex items-baseline justify-between gap-4 border-t border-line bg-ground py-3.5 pl-[18px] pr-[calc(16px+1.75rem)]">
         <span className="text-[13.5px] text-ink-3">Shares add up to the bill</span>
         <span className="text-[15px] font-semibold">{formatCurrency(total)}</span>
       </div>

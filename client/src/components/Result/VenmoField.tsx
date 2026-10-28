@@ -44,7 +44,7 @@ export const VenmoField: React.FC<VenmoFieldProps> = ({ ownerName, value, onChan
       />
     </div>
     <p className="mt-2 text-[13px] text-ink-3 [text-wrap:pretty]">
-      Friends get a button that pays {ownerName ?? 'you'} their exact share.
+      {`Friends get a button that pays ${ownerName ?? 'you'} their exact share.`}
     </p>
   </div>
 );

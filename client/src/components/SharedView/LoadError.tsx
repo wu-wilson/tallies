@@ -25,7 +25,7 @@ export const LoadError: React.FC<LoadErrorProps> = ({ message, onRetry }) => {
       <BrandBar />
       <main className="flex flex-1 flex-col items-center justify-center px-6 py-16 text-center">
         <p className="text-[13px] font-medium text-ink-3">Couldn't load</p>
-        <h1 className="mt-3 max-w-lg text-[clamp(30px,4vw,44px)] font-light leading-[1.08] tracking-[-0.035em] [text-wrap:balance]">
+        <h1 tabIndex={-1} className="mt-3 max-w-lg text-[clamp(30px,4vw,44px)] font-light leading-[1.08] tracking-[-0.035em] [text-wrap:balance] focus:outline-none">
           This bill didn't load. <span className="text-ink-4">Give it another try.</span>
         </h1>
         {message && <p className="mt-4 max-w-sm text-[15px] text-ink-2 [text-wrap:pretty]">{message}</p>}

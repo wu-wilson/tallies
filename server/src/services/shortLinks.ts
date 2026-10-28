@@ -38,8 +38,9 @@ export async function saveBill(data: BillPayload): Promise<string> {
       );
       return id;
     } catch (err) {
-      const pgErr = err as Error & { code?: string };
-      if (pgErr.code !== '23505') throw unavailable(err);
+      // 23505 is a unique violation: the ID is taken, so the loop draws another.
+      const isCollision = err instanceof Error && 'code' in err && err.code === '23505';
+      if (!isCollision) throw unavailable(err);
     }
   }
 
@@ -62,18 +63,16 @@ export interface StoredBill {
  * already expired
  */
 export async function getBill(id: string): Promise<StoredBill | null> {
-  const result = await query('SELECT data, expires_at FROM bills WHERE id = $1 AND expires_at > NOW()', [id]).catch(
-    (err: unknown) => {
-      throw unavailable(err);
-    },
-  );
+  const result = await query<{ data: BillPayload; expires_at: Date }>(
+    'SELECT data, expires_at FROM bills WHERE id = $1 AND expires_at > NOW()',
+    [id],
+  ).catch((err: unknown) => {
+    throw unavailable(err);
+  });
 
   if (result.rows.length === 0) {
     return null;
   }
 
-  return {
-    data: result.rows[0].data as BillPayload,
-    expiresAt: result.rows[0].expires_at as Date,
-  };
+  return { data: result.rows[0].data, expiresAt: result.rows[0].expires_at };
 }

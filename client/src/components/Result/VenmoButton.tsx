@@ -24,7 +24,8 @@ interface VenmoButtonProps {
  */
 export const VenmoButton: React.FC<VenmoButtonProps> = ({ username, payeeName, amount, memo }) => {
   const { href, shouldOpenInNewTab } = buildVenmoLink({ username, amount, memo });
-  const label = payeeName ? `Pay ${payeeName} ${formatCurrency(amount)}` : `Pay ${formatCurrency(amount)}`;
+  // The name is bidi-isolated (FSI…PDI), so a right-to-left name can't pull the amount into its run.
+  const label = payeeName ? `Pay \u2068${payeeName}\u2069 ${formatCurrency(amount)}` : `Pay ${formatCurrency(amount)}`;
 
   return (
     <a

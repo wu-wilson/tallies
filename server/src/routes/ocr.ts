@@ -1,10 +1,11 @@
 import { Router } from 'express';
-import { fromBuffer } from 'file-type';
 import multer from 'multer';
 
 import { config } from '../config';
 import { writeLimiter } from '../middleware/rateLimiter';
-import { isAllowedMime, readReceipt } from '../services/ocr';
+import { detectImageType, readReceipt } from '../services/ocr';
+
+import { describeError } from '../lib/describeError';
 
 import type { NextFunction, Request, Response } from 'express';
 
@@ -13,32 +14,31 @@ export const ocrRouter = Router();
 
 const upload = multer({
   storage: multer.memoryStorage(),
-  limits: { fileSize: config.maxImageSizeBytes },
+  // One file and no text fields, so extra parts are refused rather than buffered in memory.
+  limits: { fileSize: config.maxImageSizeBytes, files: 1, fields: 0 },
 });
 
 /**
- * Wrap `upload.single('file')` and convert multer errors into user-safe responses (413 for size, 400 otherwise).
+ * Wrap `upload.single('file')` and turn any upload failure into a user-safe response (413 for size, 400 otherwise).
  * @param req - The multipart upload; multer attaches its `file` field as `req.file`
- * @param res - Express response (written directly on multer errors)
- * @param next - Express next callback (called when upload succeeds or a non-multer error needs to bubble)
+ * @param res - Express response (written directly when the upload fails)
+ * @param next - Express next callback, called once the upload succeeds
  */
 function uploadReceipt(req: Request, res: Response, next: NextFunction): void {
   upload.single('file')(req, res, (err: unknown) => {
-    if (err instanceof multer.MulterError) {
-      if (err.code === 'LIMIT_FILE_SIZE') {
-        const mb = Math.round(config.maxImageSizeBytes / 1024 / 1024);
-        res.status(413).json({ error: `This image is too large. Upload one under ${mb} MB.` });
-        return;
-      }
-      console.error(`Multer upload error: ${err.code} — ${err.message}`);
-      res.status(400).json({ error: "Couldn't upload this photo. Try again." });
+    if (!err) {
+      next();
       return;
     }
-    if (err) {
-      next(err);
+    if (err instanceof multer.MulterError && err.code === 'LIMIT_FILE_SIZE') {
+      // Rounded down to a tenth, so the stated limit never exceeds the real one.
+      const mb = Math.floor((config.maxImageSizeBytes / 1024 / 1024) * 10) / 10;
+      res.status(413).json({ error: `This image is too large. Upload one under ${mb} MB.` });
       return;
     }
-    next();
+    // Memory storage can't fail on its own, so anything else is a refused or malformed upload.
+    console.error(`Upload error: ${describeError(err)}`);
+    res.status(400).json({ error: "Couldn't upload this photo. Try again." });
   });
 }
 
@@ -49,8 +49,8 @@ ocrRouter.post('/ocr', writeLimiter, uploadReceipt, async (req, res, next) => {
       return;
     }
 
-    const mime = (await fromBuffer(req.file.buffer))?.mime;
-    if (!isAllowedMime(mime)) {
+    const mime = detectImageType(req.file.buffer);
+    if (!mime) {
       res.status(400).json({ error: 'Upload a JPEG, PNG, or WebP image.' });
       return;
     }

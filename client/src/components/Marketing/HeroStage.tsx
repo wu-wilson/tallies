@@ -18,7 +18,7 @@ const FLOAT = 'absolute rounded-xl border border-ink/[0.08] bg-surface shadow-fl
  * @returns The art with its floating cards
  */
 export const HeroStage: React.FC = () => (
-  <div className="relative -mx-5 min-h-[560px] sm:-mx-6 sm:min-h-[600px] lg:mx-0 lg:min-h-[640px]" aria-hidden="true">
+  <div className="relative -mx-5 min-h-[35rem] sm:-mx-6 sm:min-h-[37.5rem] lg:mx-0 lg:min-h-[40rem]" aria-hidden="true">
     {/* Below `lg` the art shrinks to fit the width and the cards re-stack over it. */}
     <HeroArt className="absolute left-1/2 top-0 h-auto w-full max-w-[640px] -translate-x-1/2 lg:left-0 lg:h-full lg:max-w-none lg:translate-x-0" />
 
@@ -51,7 +51,7 @@ export const HeroStage: React.FC = () => (
 
     {/* The split card hides on phones and from 1024 to 1159px, where the column is too narrow for it
         beside the receipt. */}
-    <div className={`${FLOAT} right-[max(24px,calc(50%-300px))] top-[60px] hidden w-64 sm:block lg:right-0 lg:top-14 lg:hidden min-[1160px]:block`}>
+    <div className={`${FLOAT} right-[max(24px,calc(50%-300px))] top-[60px] hidden w-[256px] sm:block lg:right-0 lg:top-14 lg:hidden min-[1160px]:block`}>
       <div className="flex h-[42px] items-center justify-between border-b border-line px-3.5">
         <span className="text-[13px] font-medium">Tahoe weekend</span>
         <span className="text-xs text-ink-3">$244.48</span>

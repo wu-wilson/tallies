@@ -71,7 +71,7 @@ export const AmountRow: React.FC<AmountRowProps> = ({ label, value, isPercent, a
         {shouldShowField && (
           // One unit, so the % or $ switch never wraps away from its field.
           <div className="flex items-center gap-2">
-            <span className="field flex h-[34px] w-[96px] items-center px-2.5 text-sm">
+            <span className="field flex h-[34px] w-24 items-center px-2.5 text-sm">
               {!isPercent && <span className="mr-0.5 text-ink-3">$</span>}
               <input
                 type="number"

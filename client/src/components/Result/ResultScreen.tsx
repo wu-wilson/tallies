@@ -72,7 +72,7 @@ export const ResultScreen: React.FC = () => {
     // Stays enabled (a repeat press is ignored) so keyboard focus isn't lost while the link is made or after it fails.
     <button type="button" onClick={handleCreate} aria-disabled={isCreating} className={`h-12 w-full text-[15px] ${BUTTON_PRIMARY}`}>
       {isCreating && <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-current border-t-transparent" />}
-      {isCreating ? 'Creating the link' : 'Create share link'}
+      <span>{isCreating ? 'Creating the link' : 'Create share link'}</span>
     </button>
   );
 
@@ -109,7 +109,7 @@ export const ResultScreen: React.FC = () => {
           </div>
         </div>
       </main>
-      <div className="sticky bottom-0 z-30 border-t border-line bg-surface px-5 pb-[calc(12px+env(safe-area-inset-bottom))] pt-3 lg:hidden">
+      <div className="sticky bottom-0 z-30 border-t border-line bg-surface px-5 pb-[calc(12px+env(safe-area-inset-bottom))] pt-3 lg:hidden print:hidden">
         {createButton}
       </div>
       <Toast message={toast.message} variant={toast.variant} isVisible={toast.isVisible} showId={toast.showId} onDismiss={dismissToast} hasRail />

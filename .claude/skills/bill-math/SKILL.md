@@ -13,7 +13,7 @@ A bill is one or more **receipts**, each with its own items and tax/tip. People 
 ## Algorithm
 
 For each receipt independently:
-1. `itemShare = (item.price × item.quantity) / item.assignees.length` for each assigned item
+1. `itemShare = (item.price × item.quantity) / item.assignees.length` for each assigned item (`quantity` is always 1, since `price` is the line total; `BillPayloadSchema` rejects any other value)
 2. `personReceiptSubtotal = sum of that person's itemShares in this receipt`
 3. `receiptSubtotal = sum of personReceiptSubtotals` (assigned items only)
 4. `receiptTax = resolveAmount(receipt.tax, receipt.taxIsPercent, receiptSubtotal)` (same for tip)
@@ -30,13 +30,12 @@ Then per person, summed across all receipts: `total = Σ (personReceiptSubtotal 
 
 ## Rounding
 
-- Full precision internally (IEEE 754 doubles). Dollar amounts are the exception on the way in: item prices and flat tax or tip are stored rounded to the cent (`roundToCents`, from their fields, from a rate switched to $, and from OCR), since their fields show cents. Percentages keep their decimals (8.875%). A typed amount is capped at `MAX_AMOUNT` ($99,999.99) and a typed rate at `MAX_RATE` (100%), so a mistyped number can't overflow the layout or the cent rounding.
-- Round to the cent only at display time, through `formatCurrency` ("$12.34") or `formatAmount` ("12.34" in ledger columns). Both go through `toCents`, which rounds half up on the amount's decimal value (2.295 → 2.30, where `toFixed` would give 2.29 from the binary approximation), so every displayed figure agrees.
-- Per-person totals are the exception: rounding each one on its own can leave them a cent off the bill total, so `computeBreakdowns` sets `roundedTotal`, allocated with the largest-remainder method (`allocateCents`) so everyone's rounded totals add up exactly to the displayed bill total. Show `roundedTotal` wherever a person's total appears, and use it as the Venmo amount.
-- The same allocation runs at every level a ledger lists parts above a total, so the lines always add up to what's shown:
-  - each of a person's receipt groups gets a `roundedTotal` allocated against the person's `roundedTotal`, and the group's item, tax, and tip lines are allocated against that;
-  - `deriveAssignedTotals` allocates the receipt totals, and the combined subtotal, tax, and tip, against the rounded bill total;
-  - `deriveBillTotals` (Verify's summary and each receipt's ledger) allocates subtotal, tax, and tip against its rounded total.
+- Full precision internally (IEEE 754 doubles). Dollar amounts are the exception on the way in: item prices and flat tax or tip are stored rounded to the cent (`roundToCents`, from their fields, from a rate switched to $, and from OCR through `toFieldAmount`), since their fields show cents. Percentages keep their decimals (8.875%). Every dollar amount, typed or scanned, is capped at `MAX_AMOUNT` ($99,999.99) and a typed rate at `MAX_RATE` (100%), the caps `BillPayloadSchema` enforces on a share, so a bad number can't overflow the layout or the cent rounding.
+- Displayed amounts are formatted through `formatCurrency` ("$12.34") or `formatAmount` ("12.34" in ledger columns). Both go through `toCents`, which rounds half up on the amount's decimal value (2.295 → 2.30, where `toFixed` would give 2.29 from the binary approximation), so every displayed figure agrees.
+- Each receipt's total is rounded to the cent on its own (`chargeFor`), as it was actually charged, and a bill's total is the sum of its receipts' totals. So a receipt shows the same total on Verify and Result, and editing one receipt never moves another.
+- Wherever a ledger lists parts above a total, the parts are allocated with the largest-remainder method (`allocateCents`) so they add up exactly to it:
+  - `computeBreakdowns` splits each receipt's total among its people as their group `roundedTotal`s, and each group's item, tax, and tip lines against that. It carries each person's rounding from one receipt to the next, so spare cents rotate rather than piling on whoever is listed first; a person's `roundedTotal` is the sum of their groups, so everyone's add up to the bill total. Show `roundedTotal` wherever a person's total appears, and use it as the Venmo amount;
+  - `deriveBillTotals` (Verify's summary and each receipt's ledger) and `deriveAssignedTotals` (Result) round each receipt's subtotal, tax, and tip against its total, then sum them.
 
 ## Edge Cases
 

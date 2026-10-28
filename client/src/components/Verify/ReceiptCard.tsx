@@ -21,7 +21,7 @@ import type { Receipt } from '../../types/bill';
 interface ReceiptCardProps {
   receipt: Receipt;
   /** Removes the receipt; omitted when it's the bill's only one, which hides the control. */
-  onRemove?: () => void;
+  onRemove?: (e: React.MouseEvent<HTMLButtonElement>) => void;
 }
 
 /**
@@ -42,10 +42,13 @@ export const ReceiptCard: React.FC<ReceiptCardProps> = ({ receipt, onRemove }) =
   const [merchantValue, setMerchantValue] = useState(receipt.merchant);
   const addItemRef = useRef<HTMLButtonElement>(null);
 
-  // A removed row takes focus with it, so hand it to Add item.
-  const handleRemoveItem = (itemId: string) => {
+  // A removed row takes focus with it, so hand it to Add item. A key press also scrolls there instantly, since the
+  // exiting row's height animation restores the scroll position a frame later and would cancel a smooth scroll. A tap
+  // stays put, keeping the next row under the finger.
+  const handleRemoveItem = (itemId: string, isKeyboard: boolean) => {
     removeItem(receipt.id, itemId);
-    addItemRef.current?.focus();
+    addItemRef.current?.focus({ preventScroll: true });
+    if (isKeyboard) addItemRef.current?.scrollIntoView({ block: 'nearest', behavior: 'instant' });
   };
 
   const { subtotal, taxAmount, tipAmount, total } = deriveBillTotals([receipt]);
@@ -54,7 +57,7 @@ export const ReceiptCard: React.FC<ReceiptCardProps> = ({ receipt, onRemove }) =
   return (
     <section aria-label={receipt.merchant || 'Receipt'} className={CARD}>
       <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 border-b border-line py-3 pl-5 pr-3">
-        <div className="min-w-0 flex-[1_1_128px]">
+        <div className="min-w-0 flex-[1_1_200px]">
           <input
             type="text"
             value={merchantValue}
@@ -64,13 +67,11 @@ export const ReceiptCard: React.FC<ReceiptCardProps> = ({ receipt, onRemove }) =
             maxLength={MAX_NAME_LENGTH}
             placeholder="Store name"
             aria-label="Store name"
-            className="cell -ml-2 h-8 w-full px-2 text-[17px] font-medium tracking-[-0.02em] placeholder:font-normal placeholder:text-ink-3"
+            className="cell -ml-2 h-8 w-full text-ellipsis px-2 text-[17px] font-medium tracking-[-0.02em] placeholder:font-normal placeholder:text-ink-3"
           />
           <div className="flex flex-wrap items-center whitespace-nowrap text-[13px] text-ink-3">
             <ReceiptDate value={receipt.date} onChange={(next) => setReceiptDate(receipt.id, next)} />
-            <span>
-              &nbsp;· {itemCount} {itemCount === 1 ? 'item' : 'items'}
-            </span>
+            <span>{`\u00a0· ${itemCount} ${itemCount === 1 ? 'item' : 'items'}`}</span>
           </div>
         </div>
         <div className="-ml-2 flex shrink-0 items-center gap-1">
@@ -91,7 +92,7 @@ export const ReceiptCard: React.FC<ReceiptCardProps> = ({ receipt, onRemove }) =
       </div>
       <AnimatePresence initial={false}>
         {receipt.items.map((item) => (
-          <ItemRow key={item.id} receiptId={receipt.id} item={item} onRemove={() => handleRemoveItem(item.id)} />
+          <ItemRow key={item.id} receiptId={receipt.id} item={item} onRemove={(e) => handleRemoveItem(item.id, e.detail === 0)} />
         ))}
       </AnimatePresence>
       <div className="border-b border-line px-3 py-1.5">
@@ -125,7 +126,7 @@ export const ReceiptCard: React.FC<ReceiptCardProps> = ({ receipt, onRemove }) =
         />
         <div className={TOTAL_GRID}>
           <span className="text-[14.5px] font-medium [grid-area:lab]">Total</span>
-          <span className="text-right text-base font-medium [grid-area:amt]">{formatCurrency(total)}</span>
+          <span className="justify-self-end whitespace-nowrap text-right text-[16px] font-medium [grid-area:amt]">{formatCurrency(total)}</span>
         </div>
       </div>
     </section>

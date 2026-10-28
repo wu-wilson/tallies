@@ -38,19 +38,27 @@ export async function compressImage(file: File): Promise<Blob> {
         return;
       }
 
+      // JPEG has no transparency, which would otherwise turn black: paint a white page under the image.
+      ctx.fillStyle = 'white';
+      ctx.fillRect(0, 0, width, height);
       ctx.drawImage(img, 0, 0, width, height);
 
-      canvas.toBlob(
-        (blob) => {
-          if (blob) {
-            resolve(blob);
-          } else {
-            reject(new Error('Failed to compress image'));
-          }
-        },
-        'image/jpeg',
-        IMAGE_QUALITY,
-      );
+      // A tainted canvas (an SVG that embeds HTML) throws here rather than calling back, which would stall the scan.
+      try {
+        canvas.toBlob(
+          (blob) => {
+            if (blob) {
+              resolve(blob);
+            } else {
+              reject(new Error('Failed to compress image'));
+            }
+          },
+          'image/jpeg',
+          IMAGE_QUALITY,
+        );
+      } catch (err) {
+        reject(err);
+      }
     };
 
     img.onerror = () => {

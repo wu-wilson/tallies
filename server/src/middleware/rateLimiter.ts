@@ -8,7 +8,9 @@ import { config } from '../config';
  */
 export const writeLimiter = rateLimit({
   windowMs: 60 * 60 * 1000,
-  max: config.writeRateLimitPerHour,
+  limit: config.writeRateLimitPerHour,
+  // A provider hands each IPv6 customer a block of addresses to rotate through, so the whole /56 shares one count.
+  ipv6Subnet: 56,
   standardHeaders: true,
   legacyHeaders: false,
   message: { error: 'Too many requests. Try again later.' },
@@ -17,7 +19,8 @@ export const writeLimiter = rateLimit({
 /** Rate limiter for GET /api/bills/:id — `config.readRateLimitPerHour`/hr/IP (default 200). */
 export const readLimiter = rateLimit({
   windowMs: 60 * 60 * 1000,
-  max: config.readRateLimitPerHour,
+  limit: config.readRateLimitPerHour,
+  ipv6Subnet: 56,
   standardHeaders: true,
   legacyHeaders: false,
   message: { error: 'Too many requests. Try again later.' },

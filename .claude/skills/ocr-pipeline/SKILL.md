@@ -18,10 +18,10 @@ Source of truth: `client/src/lib/imageCompression.ts`, `server/src/routes/ocr.ts
 
 ## Server Side
 
-1. `multer` accepts a single file upload, capped at `config.maxImageSizeBytes` (default 5 MB). The `uploadReceipt` wrapper turns a `MulterError` into a user-safe response before the handler runs: 413 for `LIMIT_FILE_SIZE`, 400 for anything else.
-2. Magic-byte validation via `file-type` — rejects non-JPEG/PNG/WebP.
+1. `multer` accepts a single file upload, capped at `config.maxImageSizeBytes` (default 5 MB). The `uploadReceipt` wrapper turns any upload failure (a `MulterError` or a malformed multipart body) into a user-safe response before the handler runs: 413 for `LIMIT_FILE_SIZE`, 400 for anything else.
+2. Magic-byte validation (`detectImageType`) — rejects non-JPEG/PNG/WebP.
 3. Buffer converted to base64.
-4. Claude Sonnet (`claude-sonnet-5-5`) called with image + OCR prompt (capped at about 3 minutes across the SDK's retries, so a stalled call can't hold the client's scan queue; the cap comes back as 502 "Couldn't scan this receipt") — thinking off (`thinking: { type: 'between_tools' }`: this model only thinks between tool calls, and the call has none) and `effort: 'low'` for latency, with `output_config.format` set to a JSON-schema mirror of `OcrResponseSchema` (`OCR_JSON_SCHEMA`) so the model returns conformant JSON.
+4. Claude Sonnet (`claude-sonnet-5-5`) called with image + OCR prompt (capped at about 3 minutes across the SDK's retries, so a stalled call can't hold the client's scan queue; the cap comes back as 502 "Couldn't scan this receipt") — thinking off (`thinking: { type: 'between_tools' }`: this model does no extended thinking with it, only short updates between tool calls, and the call has none) and `effort: 'low'` for latency, with `output_config.format` set to a JSON-schema mirror of `OcrResponseSchema` (`OCR_JSON_SCHEMA`) so the model returns conformant JSON.
 5. Response text parsed as JSON — structured output yields clean JSON; a markdown-fence strip remains as a defensive no-op.
 6. Validated with `OcrResponseSchema.safeParse()`.
 7. Merchant name stripped of addresses/phone numbers.
@@ -68,8 +68,8 @@ OcrResponseSchema = z.object({
 - OCR errors never block the user — manual entry is always available.
 - Client never sees upstream details. Every error path returns a short, friendly message; the cause (the missing env var, the Anthropic error's status and message, the unparsable output's length, Zod issue paths and codes) is logged server-side only, never the receipt's text.
 - Anthropic SDK errors are caught in `readReceipt` via `instanceof Anthropic.APIError` and remapped by `userFacingAnthropicError(status)` — 401/403 → 500 "Scanning is unavailable right now", 429 → 429 "Too many scans", 5xx → 502 "Scanning is briefly unavailable", everything else → 502 "Couldn't scan this receipt".
-- Missing API key: logged server-side; client gets 500 "Scanning is unavailable right now. Try again later."
+- Missing API key: client gets 500 "Scanning is unavailable right now. Try again later."
 - Invalid file type: 400 "Upload a JPEG, PNG, or WebP image."
-- Model returned no text / non-JSON / schema mismatch: all three collapse to 422 "Couldn't read this receipt. Try a clearer photo."; the underlying detail (the output's length, or Zod issue paths and codes) goes to server logs.
+- Model returned no text / non-JSON / schema mismatch: all three collapse to 422 "Couldn't read this receipt. Try a clearer photo."
 - Output cut off at `max_tokens` (8192, well past the 200-item cap): 422 "This receipt is too long to read in one go. Try photographing it in parts."
 - Empty items array (model successfully parsed but found no receipt): `useOcr` marks that row `failed` rather than building a receipt, so the user can remove it and re-add instead of landing on an empty Verify screen.

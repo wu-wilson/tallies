@@ -20,7 +20,7 @@ const STEPS = [
  * @returns The how-it-works section
  */
 export const HowItWorks: React.FC = () => (
-  <section id="how" className="scroll-mt-6 px-5 pt-24 sm:px-6">
+  <section id="how" className="px-5 pt-24 sm:px-6">
     <div className="mx-auto max-w-[1200px]">
       <h2 tabIndex={-1} className="max-w-[640px] text-[clamp(28px,2.6vw,38px)] font-light focus:outline-none leading-[1.12] tracking-[-0.03em] [text-wrap:balance]">
         From receipt to repaid. <span className="text-ink-4">Three steps, and nobody does math.</span>

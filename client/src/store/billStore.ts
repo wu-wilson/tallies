@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 
-import { roundToCents } from '../lib/billMath';
+import { toFieldAmount } from '../lib/billMath';
 import { formatReceiptDate, todayIso } from '../lib/dates';
 
 import { PERSON_COLORS } from '../constants/colors';
@@ -93,14 +93,15 @@ function nextColor(people: Person[]): typeof PERSON_COLORS[number] {
 }
 
 /**
- * Build a `Receipt` from one OCR result, with dollar amounts rounded to the cent and each line total stored as the
- * price with `quantity` pinned to 1 (which also covers by-weight items). A null tip becomes 20%; a null tax $0 flat.
+ * Build a `Receipt` from one OCR result, with dollar amounts rounded to the cent and capped at `MAX_AMOUNT` like typed
+ * ones, and each line total stored as the price with `quantity` pinned to 1 (which also covers by-weight items). A null
+ * tip becomes 20%; a null tax $0 flat.
  */
 function receiptFromOcr(result: OcrResult): Receipt {
   const items: BillItem[] = result.items.map((item) => ({
     id: uid(),
     name: item.name,
-    price: roundToCents(item.price),
+    price: toFieldAmount(item.price),
     quantity: 1,
     assignees: [],
   }));
@@ -112,9 +113,9 @@ function receiptFromOcr(result: OcrResult): Receipt {
     merchant: result.merchant || '',
     date: formatReceiptDate(ocrDate) ? ocrDate : todayIso(),
     items,
-    tax: roundToCents(result.tax ?? 0),
+    tax: toFieldAmount(result.tax ?? 0),
     taxIsPercent: false,
-    tip: tipFromOcr === null ? 20 : roundToCents(tipFromOcr),
+    tip: tipFromOcr === null ? 20 : toFieldAmount(tipFromOcr),
     tipIsPercent: tipFromOcr === null,
   };
 }

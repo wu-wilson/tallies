@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { flushSync } from 'react-dom';
 
 import { AppBar } from '../common/AppBar';
 import { BackLink } from '../common/BackLink';
@@ -35,10 +36,13 @@ export const VerifyScreen: React.FC = () => {
 
   const itemCount = receipts.reduce((n, r) => n + r.items.length, 0);
 
-  // A removed receipt takes focus with it, so hand it to Add another receipt.
-  const handleRemoveReceipt = (receiptId: string) => {
-    removeReceipt(receiptId);
-    addReceiptRef.current?.focus();
+  // A removed receipt takes focus with it, so hand it to Add another receipt. Only a key press scrolls there, once the
+  // card is gone so the scroll aims at where the button ends up. A tap stays put, keeping the next receipt under the
+  // finger.
+  const handleRemoveReceipt = (receiptId: string, isKeyboard: boolean) => {
+    flushSync(() => removeReceipt(receiptId));
+    addReceiptRef.current?.focus({ preventScroll: true });
+    if (isKeyboard) addReceiptRef.current?.scrollIntoView({ block: 'nearest' });
   };
 
   // Surface a partial-scan notice once, then clear it so it doesn't replay on re-render or revisit.
@@ -66,10 +70,10 @@ export const VerifyScreen: React.FC = () => {
             maxLength={MAX_NAME_LENGTH}
             placeholder="Name this bill"
             aria-label="Bill name"
-            className="cell -ml-2 mt-2 block h-[calc(1.25em+8px)] w-full max-w-[640px] px-2 text-[clamp(26px,2.3vw,32px)] leading-tight tracking-[-0.035em] placeholder:text-ink-3"
+            className="cell -ml-2 mt-2 block h-[calc(1.25em+8px)] w-full max-w-[640px] text-ellipsis px-2 text-[clamp(26px,2.3vw,32px)] leading-tight tracking-[-0.035em] placeholder:text-ink-3"
           />
           <p className="text-sm text-ink-3">
-            {receipts.length} {receipts.length === 1 ? 'receipt' : 'receipts'} · {itemCount} {itemCount === 1 ? 'item' : 'items'}
+            {`${receipts.length} ${receipts.length === 1 ? 'receipt' : 'receipts'} · ${itemCount} ${itemCount === 1 ? 'item' : 'items'}`}
           </p>
 
           <div className="mt-7 grid grid-cols-[minmax(0,1fr)] gap-4 [grid-template-areas:'people'_'main'_'summary'] lg:grid-cols-[minmax(0,1fr)_340px] lg:grid-rows-[auto_auto_1fr] lg:gap-x-8 lg:[grid-template-areas:'main_people'_'main_summary'_'main_.']">
@@ -81,7 +85,7 @@ export const VerifyScreen: React.FC = () => {
                 <ReceiptCard
                   key={receipt.id}
                   receipt={receipt}
-                  onRemove={receipts.length > 1 ? () => handleRemoveReceipt(receipt.id) : undefined}
+                  onRemove={receipts.length > 1 ? (e) => handleRemoveReceipt(receipt.id, e.detail === 0) : undefined}
                 />
               ))}
               <button

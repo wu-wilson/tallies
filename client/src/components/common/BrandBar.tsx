@@ -8,7 +8,7 @@ import { Lockup } from './Lockup';
  * @returns The brand bar
  */
 export const BrandBar: React.FC = () => (
-  <header className="border-b border-line bg-surface px-5 sm:px-6">
+  <header className="border-b border-line bg-surface px-5 pt-[env(safe-area-inset-top)] sm:px-6">
     <div className="mx-auto flex h-16 max-w-[1200px] items-center">
       <Lockup />
     </div>

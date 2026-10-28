@@ -16,10 +16,10 @@ export const MAX_NAME_LENGTH = 100;
 /** Max length of an item name (matches server-side cap). */
 export const MAX_ITEM_NAME_LENGTH = 200;
 
-/** Largest dollar amount a price, tax, or tip field takes, so a mistyped number can't break the layout or the math. */
+/** Largest price, tax, or tip in dollars, so a bad number can't break the layout or math (matches server-side cap). */
 export const MAX_AMOUNT = 99_999.99;
 
-/** Largest percentage a tax or tip rate field takes. */
+/** Largest percentage a tax or tip rate takes (matches server-side cap). */
 export const MAX_RATE = 100;
 
 /** Max length of a Venmo username (matches server-side regex bound). */

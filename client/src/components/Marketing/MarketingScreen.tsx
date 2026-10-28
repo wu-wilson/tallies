@@ -43,7 +43,12 @@ export const MarketingScreen: React.FC = () => {
             <Lockup size="sm" />
             <span className="text-ink-3">A free, solo passion project.</span>
           </div>
-          <a href="https://github.com/wu-wilson/tallies" target="_blank" rel="noopener noreferrer" className={LINK_MUTED}>
+          <a
+            href="https://github.com/wu-wilson/tallies"
+            target="_blank"
+            rel="noopener noreferrer"
+            className={`relative before:absolute before:inset-x-0 before:-inset-y-2 before:content-[''] ${LINK_MUTED}`}
+          >
             View the source on GitHub
           </a>
         </div>

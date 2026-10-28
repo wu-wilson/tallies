@@ -71,7 +71,7 @@ export const ShareScreen: React.FC = () => {
 
           <div className={`mt-7 flex items-center gap-3 py-1.5 pl-4 pr-1.5 ${CARD}`}>
             {/* The break opportunity after "/b/" moves the ID to its own line whole on the narrowest phones. */}
-            <span className="min-w-0 flex-1 text-[15px] font-medium [overflow-wrap:anywhere]">
+            <span className="min-w-0 flex-1 select-all text-[15px] font-medium [overflow-wrap:anywhere]">
               {displayUrl.slice(0, idStart)}
               <wbr />
               {displayUrl.slice(idStart)}
@@ -93,7 +93,7 @@ export const ShareScreen: React.FC = () => {
                 <span className="shrink-0 text-[13px] text-ink-3">{formatCurrency(owed)} in total</span>
               </div>
               {owing.map((b) => (
-                <div key={b.personId} className="flex h-[52px] items-center gap-3 border-t border-line-soft px-[18px]">
+                <div key={b.personId} className="flex h-[52px] break-inside-avoid items-center gap-3 border-t border-line-soft px-[18px]">
                   <Avatar name={b.personName} color={b.personColor} />
                   <span className="min-w-0 flex-1 truncate text-[14.5px] font-medium">{b.personName}</span>
                   <span className="text-[15px] font-semibold">{formatCurrency(b.roundedTotal)}</span>

@@ -3,6 +3,13 @@ import { z } from 'zod';
 // Mirrors `client/src/constants/colors.ts` — keep in sync.
 const PERSON_COLOR_KEYS = ['slate', 'gold', 'plum', 'sage', 'rose', 'teal', 'taupe', 'clay'] as const;
 
+// Mirror `MAX_AMOUNT` and `MAX_RATE` in `client/src/constants/config.ts` — keep in sync.
+const MAX_AMOUNT = 99_999.99;
+const MAX_RATE = 100;
+
+/** A dollar amount the client's fields accept: from $0 up to `MAX_AMOUNT`. */
+const amount = z.number().nonnegative().max(MAX_AMOUNT);
+
 /** Characters JSONB can't store: NUL, and either half of an emoji's surrogate pair on its own. */
 const UNSTORABLE = /\u0000|[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/;
 
@@ -18,21 +25,26 @@ const PersonSchema = z.object({
 const ItemSchema = z.object({
   id: storableText(64),
   name: storableText(200),
-  price: z.number().nonnegative().finite(),
-  quantity: z.number().int().positive(),
+  price: amount,
+  // Each line total is stored as the price, so quantity is always 1.
+  quantity: z.literal(1),
   assignees: z.array(storableText(64)).max(50),
 });
 
-const ReceiptSchema = z.object({
-  id: storableText(64),
-  merchant: storableText(100),
-  date: storableText(50),
-  items: z.array(ItemSchema).max(200),
-  tax: z.number().nonnegative().finite(),
-  taxIsPercent: z.boolean(),
-  tip: z.number().nonnegative().finite(),
-  tipIsPercent: z.boolean(),
-});
+const ReceiptSchema = z
+  .object({
+    id: storableText(64),
+    merchant: storableText(100),
+    date: storableText(50),
+    items: z.array(ItemSchema).max(200),
+    tax: amount,
+    taxIsPercent: z.boolean(),
+    tip: amount,
+    tipIsPercent: z.boolean(),
+  })
+  .refine((r) => (!r.taxIsPercent || r.tax <= MAX_RATE) && (!r.tipIsPercent || r.tip <= MAX_RATE), {
+    message: 'A tax or tip rate is over 100%',
+  });
 
 /**
  * Validated shape of a bill stored under a share ID: its receipts (each with items and tax/tip) and shared people.

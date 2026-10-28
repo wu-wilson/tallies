@@ -2,6 +2,8 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { useBillStore } from '../store/billStore';
 
+import { readErrorMessage } from '../lib/apiError';
+import { toFieldAmount } from '../lib/billMath';
 import { compressImage } from '../lib/imageCompression';
 
 import { API_URL, MAX_RECEIPTS } from '../constants/config';
@@ -78,10 +80,7 @@ export function useOcr() {
         const response = await fetch(`${API_URL}/api/ocr`, { method: 'POST', body: formData, signal }).catch(() => {
           throw new Error("Couldn't reach Tallies. Check your connection and try again.");
         });
-        if (!response.ok) {
-          const errorData = await response.json().catch(() => null);
-          throw new Error(errorData?.error || "Couldn't read this receipt. Try again.");
-        }
+        if (!response.ok) throw new Error(await readErrorMessage(response, "Couldn't read this receipt. Try again."));
 
         const result: OcrResult = await response.json().catch(() => {
           throw new Error("Couldn't read this receipt. Try again.");
@@ -93,7 +92,7 @@ export function useOcr() {
           status: 'done',
           merchant: result.merchant || undefined,
           itemCount: result.items.length,
-          subtotal: result.items.reduce((sum, item) => sum + item.price, 0),
+          subtotal: result.items.reduce((sum, item) => sum + toFieldAmount(item.price), 0),
           result,
         });
       } catch (err) {

@@ -15,12 +15,12 @@ export function errorHandler(
   _next: NextFunction,
 ): void {
   const typed = err as Error & { status?: number; statusCode?: number; isPublic?: boolean; type?: string };
-  // Log the stack only, never the error object, which can carry a request body. A JSON parse error's message quotes
-  // the body itself, so it gets a fixed line instead.
-  const isParseError = typed.type === 'entity.parse.failed';
-  console.error(isParseError ? 'Malformed JSON body' : (err.stack ?? `${err.name}: ${err.message}`));
-
   const status = typed.status || typed.statusCode || 500;
+  // A rejected request logs only its kind, since body-parser's and Express's messages quote the body, a header, or the
+  // path. A server error logs its stack, never the error object, which can carry a request body.
+  if (status < 500) console.error(`Request rejected (${status}): ${typed.type ?? err.name}`);
+  else console.error(err.stack ?? `${err.name}: ${err.message}`);
+
   let message: string;
   if (typed.isPublic && err.message) {
     message = err.message;

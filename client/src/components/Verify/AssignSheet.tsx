@@ -1,4 +1,4 @@
-import React, { useEffect, useLayoutEffect, useRef } from 'react';
+import React, { useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 
@@ -6,6 +6,7 @@ import { Avatar } from '../common/Avatar';
 import { Icon } from '../common/Icon';
 import { BUTTON_PRIMARY, BUTTON_SECONDARY } from '../common/styles';
 
+import { useModal } from '../../hooks/useModal';
 import { useBillStore } from '../../store/billStore';
 
 import { formatCurrency } from '../../lib/billMath';
@@ -36,59 +37,7 @@ export const AssignSheet: React.FC<AssignSheetProps> = ({ receiptId, item, onClo
   const assignAllToItem = useBillStore((s) => s.assignAllToItem);
   const clearItemAssignees = useBillStore((s) => s.clearItemAssignees);
   const dialogRef = useRef<HTMLDivElement>(null);
-  // The parent passes a fresh closure each render; a ref keeps the effect below from re-running (and refocusing).
-  const onCloseRef = useRef(onClose);
-  onCloseRef.current = onClose;
-  const isOpen = item !== null;
-
-  // Make the app behind the sheet inert, so neither Tab nor a screen reader can reach it (the sheet portals
-  // outside `#root`). A layout effect, so leaving Verify with the sheet open clears it before the next screen
-  // focuses its heading.
-  useLayoutEffect(() => {
-    if (!isOpen) return;
-    const app = document.getElementById('root');
-    if (app) app.inert = true;
-    return () => {
-      if (app) app.inert = false;
-    };
-  }, [isOpen]);
-
-  // Move focus into the dialog, keep Tab inside it, and hand focus back to the item's button on close. A passive
-  // effect, since React restores the pre-commit focus after a layout cleanup.
-  useEffect(() => {
-    if (!isOpen) return;
-    dialogRef.current?.querySelector<HTMLElement>('button')?.focus();
-    // Lock the page behind the sheet, so swipes and the wheel move the list rather than Verify.
-    const page = document.documentElement;
-    const previousOverflow = page.style.overflow;
-    page.style.overflow = 'hidden';
-
-    const handleKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        onCloseRef.current();
-        return;
-      }
-      if (e.key !== 'Tab' || !dialogRef.current) return;
-      const buttons = dialogRef.current.querySelectorAll<HTMLElement>('button');
-      const first = buttons[0];
-      const last = buttons[buttons.length - 1];
-      // Focus outside the sheet (a click on its text drops it to the body) re-enters at the near end.
-      const isOutside = !dialogRef.current.contains(document.activeElement);
-      if (e.shiftKey && (isOutside || document.activeElement === first)) {
-        e.preventDefault();
-        last.focus();
-      } else if (!e.shiftKey && (isOutside || document.activeElement === last)) {
-        e.preventDefault();
-        first.focus();
-      }
-    };
-    window.addEventListener('keydown', handleKey);
-    return () => {
-      window.removeEventListener('keydown', handleKey);
-      page.style.overflow = previousOverflow;
-      returnFocusRef.current?.focus();
-    };
-  }, [isOpen]);
+  useModal(item !== null, dialogRef, onClose, returnFocusRef);
 
   // A portal on `document.body`, so the animated row it opens from can't clip or offset it.
   return createPortal(
@@ -116,7 +65,7 @@ export const AssignSheet: React.FC<AssignSheetProps> = ({ receiptId, item, onClo
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: 24, opacity: 0 }}
             transition={{ duration: DURATION.normal, ease: EASE.out }}
-            className="relative max-h-[85dvh] w-full overflow-y-auto rounded-t-2xl border border-transparent bg-surface shadow-sheet sm:max-w-[400px] sm:rounded-xl sm:shadow-float"
+            className="relative max-h-[85dvh] w-full scroll-py-2 overflow-y-auto rounded-t-2xl border border-transparent bg-surface shadow-sheet sm:max-w-[400px] sm:rounded-xl sm:shadow-float"
           >
             <div className="flex items-start justify-between gap-4 px-5 pb-3 pt-5">
               <div className="min-w-0">

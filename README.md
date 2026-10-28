@@ -64,6 +64,7 @@ cd tallies
 
 ```bash
 brew install postgresql@18
+brew link --force postgresql@18  # versioned formulas aren't put on PATH by default
 brew services start postgresql@18
 createdb tallies
 psql tallies -f schema.sql

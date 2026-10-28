@@ -3,6 +3,7 @@ paths:
   - "client/**/*.ts"
   - "client/**/*.tsx"
   - "server/**/*.ts"
+  - "cron/**/*.ts"
 ---
 
 # Code Style
@@ -17,7 +18,7 @@ paths:
 ## Docstrings
 
 - Every exported function, hook, component, and type must have a JSDoc docstring.
-- **Functions, hooks, components:** structure is one-sentence overview (extend to a second sentence when extra context helps), then `@param name - description` for each parameter, then `@returns description` (omit `@returns` only on void functions). Both tags are mandatory — never "as appropriate".
+- **Functions, hooks, components:** structure is one-sentence overview (extend to a second sentence when extra context helps), then `@param name - description` for each parameter, then `@returns description` (omit `@returns` only on void functions).
 - **Types/interfaces:** one-line overview is sufficient. Add inline `/** one-line description */` on individual fields that need explanation; leave self-evident fields untagged.
 - `@param`/`@returns` descriptions are prose only — don't restate the TypeScript type. Add semantic info the signature doesn't carry (units, formats, ranges, null-vs-empty semantics, side effects, retry behavior).
 - Don't use `@throws` — describe error/failure semantics in the prose overview or via a result shape (e.g. an `error` field on the return object).

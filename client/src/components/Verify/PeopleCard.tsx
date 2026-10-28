@@ -61,14 +61,17 @@ export const PeopleCard: React.FC = () => {
     else setNewName('');
   };
 
-  const handleRemove = (id: string) => {
+  // A removed row takes focus with it, so hand it to Add person. Only a key press scrolls there: a tap stays put,
+  // keeping the next row under the finger.
+  const handleRemove = (id: string, isKeyboard: boolean) => {
     removePerson(id);
-    addButtonRef.current?.focus();
+    addButtonRef.current?.focus({ preventScroll: true });
+    if (isKeyboard) addButtonRef.current?.scrollIntoView({ block: 'nearest' });
   };
 
   return (
     <section aria-label="People" className={CARD}>
-      <div className="flex items-baseline justify-between pb-1.5 pl-[18px] pr-4 pt-3.5">
+      <div className="flex items-baseline justify-between pb-1.5 pl-[18px] pr-4 pt-4">
         <h2 className={CARD_TITLE}>People</h2>
         {people.length > 0 && <span className="text-[13px] text-ink-3">{people.length}</span>}
       </div>
@@ -85,7 +88,7 @@ export const PeopleCard: React.FC = () => {
             >
               <Avatar name={person.name} color={person.color} />
               <span className="min-w-0 flex-1 truncate text-[14.5px] font-medium">{person.name}</span>
-              <button type="button" onClick={() => handleRemove(person.id)} aria-label={`Remove ${person.name}`} className={BUTTON_REMOVE}>
+              <button type="button" onClick={(e) => handleRemove(person.id, e.detail === 0)} aria-label={`Remove ${person.name}`} className={BUTTON_REMOVE}>
                 <Icon name="cross" size={14} />
               </button>
             </motion.div>

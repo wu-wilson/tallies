@@ -70,13 +70,15 @@ export const PersonRow: React.FC<PersonRowProps> = ({ breakdown, peopleCount, is
             transition={{ duration: DURATION.normal, ease: EASE.out }}
             className="overflow-hidden bg-ground"
           >
-            <div className="flex flex-col gap-4 pb-[18px] pl-[18px] pr-4 pt-1 sm:pl-[62px] sm:pr-11">
+            {/* From `sm` the items start under the name and end under the total: the row's padding plus its avatar or
+                chevron and gap. */}
+            <div className="flex flex-col gap-4 pb-[18px] pl-[18px] pr-4 pt-1 sm:pl-[calc(18px+2.75rem)] sm:pr-[calc(16px+1.75rem)]">
               {breakdown.groups.map((group) => (
                 <PersonGroup key={group.receiptId} group={group} peopleCount={peopleCount} />
               ))}
               {itemCount === 0 && <p className="text-[13px] text-ink-3">Nothing assigned on this bill.</p>}
               {shouldShowPay && (
-                <div>
+                <div className="break-inside-avoid">
                   <VenmoButton username={venmoUsername} payeeName={payerName} amount={breakdown.roundedTotal} memo={venmoMemo ?? ''} />
                   <p className="mt-2 text-center text-[12.5px] text-ink-3">Opens Venmo with the amount filled in.</p>
                 </div>

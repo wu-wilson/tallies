@@ -42,8 +42,6 @@ A light, restrained system in the spirit of Stripe and Forge: white surfaces, ha
 
 ## Animation
 
-- Duration constants from `constants/animations.ts`. All in-flow ≤300ms.
-- Prefer `transform` and `opacity` (GPU-accelerated). Use `AnimatePresence` for mount/unmount and height for expand/collapse.
-- No page-load or entrance animations — screens render immediately.
-- The landing's two demo loops (`demo-*`, `how-*` in `index.css`) are the only ambient motion. Their resting styles form a complete still (the hero fully assigned with the pay button ready, the steps on step 1), which is what reduced motion shows.
+- Prefer `transform` and `opacity` (GPU-accelerated), and height for expand/collapse.
+- The landing's two demo loops (`demo-*`, `how-*` in `index.css`) are the only ambient motion. Their resting styles form a complete still (the hero fully assigned with the pay button ready, the steps on step 1), which is what reduced motion and print show.
 - Spinners use Tailwind's `animate-spin`.

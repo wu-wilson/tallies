@@ -41,7 +41,7 @@ export const SplitEvenlySwitch: React.FC<SplitEvenlySwitchProps> = ({ receipt })
       {/* Off, an ink-4 edge and knob give the switch 3:1 contrast; on, it's solid green. The outline (transparent
           when on) and the CanvasText knob also keep it drawn in forced-colors mode, which drops backgrounds. */}
       <span
-        className={`flex h-5 w-[34px] items-center rounded-full p-0.5 outline outline-1 transition-colors duration-200 ${
+        className={`flex h-5 w-[2.125rem] items-center rounded-full p-0.5 outline outline-1 transition-colors duration-200 ${
           isOn ? 'bg-settled outline-transparent' : 'bg-surface outline-ink-4'
         }`}
       >

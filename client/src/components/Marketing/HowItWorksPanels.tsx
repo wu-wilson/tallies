@@ -37,7 +37,7 @@ export const ScanPanel: React.FC = () => (
     <PanelHeader title="Receipts" meta="2 of 3 read" />
     <div className="px-4 pb-2.5 pt-1.5 text-[12.5px]">
       {SCANS.map((scan) => (
-        <div key={scan.name} className="flex h-[52px] items-center gap-3 border-b border-line-soft last:border-b-0">
+        <div key={scan.name} className="flex min-h-[52px] items-center gap-3 border-b border-line-soft last:border-b-0">
           <span className="h-[34px] w-[26px] shrink-0 rounded-[3px] border border-line bg-line-soft" />
           <span className="min-w-0 flex-1">
             <span className="block font-medium">{scan.name}</span>

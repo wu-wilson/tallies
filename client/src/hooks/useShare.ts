@@ -2,6 +2,8 @@ import { useCallback, useState } from 'react';
 
 import { useBillStore } from '../store/billStore';
 
+import { readErrorMessage } from '../lib/apiError';
+
 import { API_URL } from '../constants/config';
 
 import type { Person, Receipt } from '../types/bill';
@@ -84,10 +86,7 @@ async function createBill(payload: {
   }).catch(() => {
     throw new Error("Couldn't reach Tallies. Check your connection and try again.");
   });
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => null);
-    throw new Error(errorData?.error || "Couldn't create the link. Try again.");
-  }
+  if (!response.ok) throw new Error(await readErrorMessage(response, "Couldn't create the link. Try again."));
   const { id } = await response.json().catch(() => {
     throw new Error("Couldn't create the link. Try again.");
   });

@@ -27,7 +27,7 @@ export const SettleCard: React.FC<SettleCardProps> = ({ people, payerId, onPayer
   const payer = people.find((p) => p.id === payerId);
 
   return (
-    <section aria-label="Settle up" className={`p-[18px] ${CARD}`}>
+    <section aria-label="Settle up" className={`px-[18px] pb-[18px] pt-4 ${CARD}`}>
       <fieldset disabled={isLocked} className="min-w-0">
         <PayerSelect people={people} value={payerId} onChange={onPayerChange} />
         <div className="mt-5">

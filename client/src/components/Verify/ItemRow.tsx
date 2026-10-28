@@ -21,7 +21,7 @@ interface ItemRowProps {
   /** ID of the receipt this item belongs to, threaded into every store mutation. */
   receiptId: string;
   item: BillItem;
-  onRemove: () => void;
+  onRemove: (e: React.MouseEvent<HTMLButtonElement>) => void;
 }
 
 /**
@@ -94,7 +94,7 @@ export const ItemRow: React.FC<ItemRowProps> = ({ receiptId, item, onRemove }) =
               className="inline-flex h-8 items-center gap-1.5 rounded-md border border-dashed border-line-strong px-2.5 text-[13px] font-medium text-ink-2 transition-colors duration-200 enabled:hover:border-ink-4 enabled:hover:text-ink disabled:cursor-not-allowed disabled:opacity-40"
             >
               <Icon name="plus" size={14} />
-              Assign
+              <span>Assign</span>
             </button>
           )}
         </div>
@@ -130,7 +130,8 @@ export const ItemRow: React.FC<ItemRowProps> = ({ receiptId, item, onRemove }) =
 /** "Alex, Jordan" for one or two people, "Everyone" when the whole table shares it, else "Alex, Jordan +2". */
 function assigneeLabel(assigned: Person[], peopleCount: number): string {
   if (assigned.length === peopleCount && peopleCount > 2) return 'Everyone';
-  const names = assigned.map((p) => p.name);
+  // Each name is bidi-isolated (FSI…PDI), so a right-to-left name can't reorder the commas or "+2" around it.
+  const names = assigned.map((p) => `\u2068${p.name}\u2069`);
   if (names.length <= 2) return names.join(', ');
   return `${names.slice(0, 2).join(', ')} +${names.length - 2}`;
 }

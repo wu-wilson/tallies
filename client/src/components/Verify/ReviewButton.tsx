@@ -26,7 +26,7 @@ export const ReviewButton: React.FC<ReviewButtonProps> = ({ variant }) => {
       type="button"
       onClick={() => setScreen('result')}
       disabled={!isReady}
-      className={`h-[46px] text-[15px] ${variant === 'rail' ? 'w-full' : 'shrink-0 px-5'} ${BUTTON_PRIMARY}`}
+      className={`h-[46px] text-[15px] ${variant === 'rail' ? 'w-full' : 'min-w-0 max-w-[60%] px-5 text-center'} ${BUTTON_PRIMARY}`}
     >
       Review the split
     </button>
@@ -38,7 +38,7 @@ export const ReviewButton: React.FC<ReviewButtonProps> = ({ variant }) => {
       {button}
       <p role="status" className={`mt-2.5 flex items-center justify-center gap-1.5 text-[13px] ${isReady ? 'text-settled' : 'text-ink-3'}`}>
         <Icon name={isReady ? 'check' : 'alert'} size={14} />
-        {message}
+        <span>{message}</span>
       </p>
     </div>
   );

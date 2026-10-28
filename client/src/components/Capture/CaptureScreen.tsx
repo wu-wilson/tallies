@@ -35,10 +35,11 @@ export const CaptureScreen: React.FC = () => {
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
-  // A removed row takes focus with it, so hand it to Choose files.
-  const handleRemoveEntry = (entryId: string) => {
+  // A removed row takes focus with it, so hand it to Choose files. Only a key press scrolls there: a tap stays put.
+  const handleRemoveEntry = (entryId: string, isKeyboard: boolean) => {
     removeEntry(entryId);
-    chooseRef.current?.focus();
+    chooseRef.current?.focus({ preventScroll: true });
+    if (isKeyboard) chooseRef.current?.scrollIntoView({ block: 'nearest' });
   };
 
   const handleManualEntry = () => {
@@ -82,14 +83,12 @@ export const CaptureScreen: React.FC = () => {
             <>
               <div className="mt-7 flex items-baseline justify-between">
                 <h2 className="text-sm font-medium">Receipts</h2>
-                <span className="text-[13px] text-ink-3">
-                  {receiptCount} of {MAX_RECEIPTS} on this bill
-                </span>
+                <span className="text-[13px] text-ink-3">{`${receiptCount} of ${MAX_RECEIPTS} on this bill`}</span>
               </div>
               <div className={`mt-2.5 overflow-hidden ${CARD}`}>
                 <AnimatePresence initial={false}>
                   {entries.map((entry) => (
-                    <ScanRow key={entry.id} entry={entry} onRemove={() => handleRemoveEntry(entry.id)} />
+                    <ScanRow key={entry.id} entry={entry} onRemove={(e) => handleRemoveEntry(entry.id, e.detail === 0)} />
                   ))}
                 </AnimatePresence>
               </div>
@@ -108,12 +107,10 @@ export const CaptureScreen: React.FC = () => {
       </main>
 
       {entries.length > 0 && (
-        <div className="sticky bottom-0 border-t border-line bg-surface px-5 pb-[calc(12px+env(safe-area-inset-bottom))] pt-3">
+        <div className="sticky bottom-0 border-t border-line bg-surface px-5 pb-[calc(12px+env(safe-area-inset-bottom))] pt-3 print:hidden">
           <div className="mx-auto flex max-w-[680px] items-center justify-between gap-4">
-            <div aria-live="polite" className="min-w-0">
-              <div className="text-sm font-medium">
-                {doneCount} of {entries.length} ready
-              </div>
+            <div aria-live="polite" aria-atomic="true" className="min-w-0">
+              <div className="text-sm font-medium">{`${doneCount} of ${entries.length} ready`}</div>
               <div className="truncate text-[12.5px] text-ink-3">{barNote}</div>
             </div>
             <button type="button" onClick={commit} disabled={!isReadyToContinue} className={`h-[46px] shrink-0 px-[22px] text-[15px] ${BUTTON_PRIMARY}`}>

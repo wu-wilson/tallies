@@ -65,8 +65,10 @@
     scroll-behavior: smooth;
     /* Keeps the layout still when the assign sheet locks scrolling and a desktop scrollbar would otherwise vanish. */
     scrollbar-gutter: stable;
-    /* Scrolls a keyboard-focused control clear of the sticky bottom bars instead of leaving it behind them. */
-    scroll-padding-bottom: calc(88px + env(safe-area-inset-bottom));
+    /* Scrolls a keyboard-focused control clear of the sticky bottom bars, and off the top edge, so its ring shows. The
+       bottom is in rem because the bars grow with the font size. */
+    scroll-padding-top: 24px;
+    scroll-padding-bottom: calc(6rem + env(safe-area-inset-bottom));
     -webkit-tap-highlight-color: transparent;
     color-scheme: light;
   }
@@ -275,8 +277,8 @@
 .how-panel-2 { animation: how-panel 7.5s linear -5s infinite; }
 .how-panel-3 { animation: how-panel 7.5s linear -2.5s infinite; }
 
-/* Reduced motion: every loop ends at once on its resting frame, and in-page jumps stop scrolling smoothly. */
-@media (prefers-reduced-motion: reduce) {
+/* Reduced motion and print: every loop ends at once on its resting frame, and in-page jumps stop scrolling smoothly. */
+@media (prefers-reduced-motion: reduce), print {
   html {
     scroll-behavior: auto;
   }

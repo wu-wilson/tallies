@@ -1,10 +1,12 @@
 import { useCallback, useEffect, useState } from 'react';
 
+import { readErrorMessage } from '../lib/apiError';
+
 import { API_URL } from '../constants/config';
 
-import type { BillItem, Person, Receipt } from '../types/bill';
+import type { Person, Receipt } from '../types/bill';
 
-/** Normalized shared bill — always in the receipts shape, regardless of payload version. */
+/** A shared bill as the shared view reads it. */
 export interface SharedBill {
   /** Optional bill title; absent when the bill was shared unnamed (falls back to "Your bill"). */
   name?: string;
@@ -18,49 +20,29 @@ export interface SharedBill {
   expiresAt?: string;
 }
 
-/** Raw payload as returned by `/api/bills/:id` — either the current receipts shape or the legacy flat shape. */
+/** Raw payload as returned by `/api/bills/:id`, with optional fields stored as null. */
 interface RawBill {
   name?: string | null;
-  receipts?: Receipt[];
-  people?: Person[];
+  receipts: Receipt[];
+  people: Person[];
   payerId?: string | null;
   venmoUsername?: string | null;
-  merchant?: string | null;
-  date?: string | null;
-  items?: BillItem[];
-  tax?: number;
-  taxIsPercent?: boolean;
-  tip?: number;
-  tipIsPercent?: boolean;
   expiresAt?: string;
 }
 
-/** Wrap a legacy flat payload (no `receipts`) as a single-receipt bill so old share links keep rendering. */
-function normalizeBill(data: RawBill): SharedBill {
-  if (Array.isArray(data.receipts)) {
-    return {
-      name: data.name ?? undefined,
-      receipts: data.receipts,
-      people: data.people ?? [],
-      payerId: data.payerId ?? undefined,
-      venmoUsername: data.venmoUsername ?? undefined,
-      expiresAt: data.expiresAt,
-    };
-  }
+/**
+ * Read a fetched payload as a shared bill, turning stored nulls into absent fields.
+ * @param data - The parsed response body
+ * @returns The bill, or null when the body isn't a bill
+ */
+function toSharedBill(data: RawBill | null): SharedBill | null {
+  if (!data || !Array.isArray(data.receipts) || !Array.isArray(data.people)) return null;
   return {
-    receipts: [
-      {
-        id: 'legacy',
-        merchant: data.merchant ?? '',
-        date: data.date ?? '',
-        items: data.items ?? [],
-        tax: data.tax ?? 0,
-        taxIsPercent: data.taxIsPercent ?? false,
-        tip: data.tip ?? 0,
-        tipIsPercent: data.tipIsPercent ?? false,
-      },
-    ],
-    people: data.people ?? [],
+    name: data.name ?? undefined,
+    receipts: data.receipts,
+    people: data.people,
+    payerId: data.payerId ?? undefined,
+    venmoUsername: data.venmoUsername ?? undefined,
     expiresAt: data.expiresAt,
   };
 }
@@ -69,8 +51,8 @@ function normalizeBill(data: RawBill): SharedBill {
 const LOAD_FAILED = "Couldn't load this bill. Try again in a moment.";
 
 /**
- * Hook that fetches a shared bill from `/api/bills/:id` and tracks loading and error state, normalizing legacy flat
- * payloads into the receipts shape. Expired and missing bills both arrive as the same 404.
+ * Hook that fetches a shared bill from `/api/bills/:id` and tracks loading and error state. Expired and missing bills
+ * both arrive as the same 404.
  * @param id - 8-char base62 share ID from the URL
  * @returns `{ bill, isLoading, isNotFound, error, retry }` — `bill` is null until loaded; `isNotFound` marks a missing
  * or expired link; `error` is a user-safe message for any other failure (null otherwise); `retry()` fetches again
@@ -93,7 +75,7 @@ export function useSharedBill(id: string) {
       setError(null);
 
       try {
-        const response = await fetch(`${API_URL}/api/bills/${id}`).catch(() => null);
+        const response = await fetch(`${API_URL}/api/bills/${encodeURIComponent(id)}`).catch(() => null);
         if (isCancelled) return;
         if (!response) {
           setError("Couldn't reach Tallies. Check your connection and try again.");
@@ -103,16 +85,16 @@ export function useSharedBill(id: string) {
           setIsNotFound(true);
           return;
         }
-        const data = await response.json().catch(() => null);
-        if (isCancelled) return;
         if (!response.ok) {
-          setError(data?.error || LOAD_FAILED);
+          const message = await readErrorMessage(response, LOAD_FAILED);
+          if (!isCancelled) setError(message);
           return;
         }
-        setBill(normalizeBill(data));
-      } catch {
-        // A malformed payload that can't be normalized.
-        if (!isCancelled) setError(LOAD_FAILED);
+        const data = await response.json().catch(() => null);
+        if (isCancelled) return;
+        const sharedBill = toSharedBill(data);
+        if (sharedBill) setBill(sharedBill);
+        else setError(LOAD_FAILED);
       } finally {
         if (!isCancelled) setIsLoading(false);
       }

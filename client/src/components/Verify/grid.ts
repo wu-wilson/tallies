@@ -11,4 +11,4 @@ export const HEAD_GRID =
 
 /** Subtotal, tax, tip, and total rows: label, controls, then the amount in the price column. */
 export const TOTAL_GRID =
-  "grid items-center gap-x-3 gap-y-2 py-3 pl-5 pr-2 grid-cols-[minmax(0,1fr)_84px_32px] [grid-template-areas:'lab_amt_.'_'ctl_ctl_ctl'] sm:min-h-[52px] sm:grid-cols-[64px_minmax(0,1fr)_96px_32px] sm:py-2 sm:pr-3 sm:[grid-template-areas:'lab_ctl_amt_.']";
+  "grid items-center gap-x-3 gap-y-2 py-3 pl-5 pr-2 grid-cols-[minmax(0,1fr)_84px_32px] [grid-template-areas:'lab_amt_.'_'ctl_ctl_ctl'] sm:min-h-[52px] sm:grid-cols-[minmax(4rem,max-content)_minmax(0,1fr)_96px_32px] sm:py-2 sm:pr-3 sm:[grid-template-areas:'lab_ctl_amt_.']";

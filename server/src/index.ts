@@ -1,7 +1,7 @@
 import express from 'express';
 
 import { config } from './config';
-import { createCorsMiddleware } from './middleware/cors';
+import { createCorsMiddleware, rejectForeignOrigins } from './middleware/cors';
 import { errorHandler } from './middleware/errorHandler';
 import { billsRouter } from './routes/bills';
 import { ocrRouter } from './routes/ocr';
@@ -16,6 +16,7 @@ app.set('trust proxy', 1);
 
 // Middleware
 app.use(createCorsMiddleware());
+app.use(rejectForeignOrigins);
 app.use(express.json({ limit: '100kb' }));
 
 // Health check
