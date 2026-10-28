@@ -7,6 +7,9 @@ const PERSON_COLOR_KEYS = ['slate', 'gold', 'plum', 'sage', 'rose', 'teal', 'tau
 const MAX_AMOUNT = 99_999.99;
 const MAX_RATE = 100;
 
+// An item can be shared by everyone on the bill, so its assignees take the people cap.
+const MAX_PEOPLE = 50;
+
 /** A dollar amount the client's fields accept: from $0 up to `MAX_AMOUNT`. */
 const amount = z.number().nonnegative().max(MAX_AMOUNT);
 
@@ -28,7 +31,7 @@ const ItemSchema = z.object({
   price: amount,
   // Each line total is stored as the price, so quantity is always 1.
   quantity: z.literal(1),
-  assignees: z.array(storableText(64)).max(50),
+  assignees: z.array(storableText(64)).max(MAX_PEOPLE),
 });
 
 const ReceiptSchema = z
@@ -54,7 +57,7 @@ export const BillPayloadSchema = z
   .object({
     name: storableText(100).nullable().optional(),
     receipts: z.array(ReceiptSchema).max(20),
-    people: z.array(PersonSchema).max(50),
+    people: z.array(PersonSchema).max(MAX_PEOPLE),
     /** Optional ID of the person who paid; everyone else owes them. Must name someone in `people`. */
     payerId: storableText(64).nullable().optional(),
     /**

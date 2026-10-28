@@ -277,10 +277,7 @@ function formatPercentage(value: number, isPercent: boolean, subtotal: number): 
   return `${Number(((value / subtotal) * 100).toFixed(1))}%`;
 }
 
-/**
- * Combined totals for a set of receipts: each receipt's total rounded to the cent on its own, as it was charged, and
- * summed, with its subtotal, tax, and tip rounded to add up to it, so the parts add up to `total`.
- */
+/** Combined totals for a set of receipts: each receipt's own rounded total, summed, with the parts adding up to it. */
 export interface BillTotals {
   subtotal: number;
   taxAmount: number;

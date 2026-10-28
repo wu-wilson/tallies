@@ -8,7 +8,7 @@ paths:
 ## Routes
 
 - One router per resource under `server/src/routes/` (`ocr.ts`, `bills.ts`).
-- Validate request bodies and the model's output with Zod before business logic; the share ID is checked against `ID_PATTERN` and uploads by their leading bytes (`detectImageType`).
+- Validate request bodies and the model's output with Zod before business logic; the share ID is checked against `ID_PATTERN`.
 - Business logic in `server/src/services/`, not handlers.
 - Single error-handling middleware in `middleware/errorHandler.ts`.
 

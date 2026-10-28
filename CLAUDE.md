@@ -6,7 +6,7 @@ Tallies is a mobile-first web app for splitting bills, designed to look and feel
 
 ## Architecture
 
-- **client/** — React 18 + Vite + TypeScript. Tailwind CSS v3. Zustand for state. Framer Motion for in-flow animation, plain CSS keyframes for the landing demos. React Router for `/` and `/b/:id` (with a catch-all not-found route). All bill math runs client-side. Hanken Grotesk is self-hosted from `public/fonts/`. Production build served via `serve -s dist -l $PORT`.
+- **client/** — React 18 + Vite + TypeScript. Tailwind CSS v3. Zustand for state. Framer Motion for in-flow animation, plain CSS keyframes for the landing demos. React Router for `/` and `/b/:id` (with a catch-all not-found route). All bill math runs client-side. Hanken Grotesk is self-hosted from `public/fonts/`. Production build served via `serve -s dist` (`npm start`), whose `serve.json` caches the hashed `assets/` for a year and has HTML revalidate, so a deploy reaches the next visit.
 - **server/** — Express + TypeScript. Anthropic SDK for OCR proxy. pg (its built-in `Pool`) for Postgres. Zod validation of request bodies and OCR output. Two route files: `/api/ocr` and `/api/bills`. Stateless except for bill sharing.
 - **cron/** — TypeScript Node script. Deletes expired bills weekly (Sundays 09:00 UTC). No HTTP surface — connects to Postgres, runs the delete, logs count, exits.
 

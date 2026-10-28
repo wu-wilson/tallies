@@ -26,7 +26,7 @@ export const ReviewButton: React.FC<ReviewButtonProps> = ({ variant }) => {
       type="button"
       onClick={() => setScreen('result')}
       disabled={!isReady}
-      className={`h-[46px] text-[15px] ${variant === 'rail' ? 'w-full' : 'min-w-0 max-w-[60%] px-5 text-center'} ${BUTTON_PRIMARY}`}
+      className={`text-[15px] ${variant === 'rail' ? 'h-[46px] w-full' : 'min-h-[46px] min-w-0 max-w-[60%] px-5 text-center'} ${BUTTON_PRIMARY}`}
     >
       Review the split
     </button>
